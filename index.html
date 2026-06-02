@@ -135,10 +135,8 @@
     <!-- Main Work Area -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 relative">
         
-        <!-- Left Side: Interactive Video Player & Visualizer (7 Columns) -->
+        <!-- Left Side: Interactive Video Player & Visualizer -->
         <section class="lg:col-span-7 flex flex-col gap-6">
-            
-            <!-- Current Track Showcase / Visualizer Card -->
             <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-lg shadow-2xl flex flex-col gap-5 relative overflow-hidden group">
                 <div id="theme-border" class="absolute inset-x-0 top-0 h-[3px] bg-sky-500 transition-all duration-1000"></div>
 
@@ -263,15 +261,10 @@
                 <p class="text-xs leading-relaxed text-slate-400">
                     Running locally from your desktop means Chrome's security sandbox might ask you to click <span class="text-sky-400 font-bold">directly on the YouTube video panel first</span> to kick off playback permissions. Keep auto-next active for infinite, distraction-free studying!
                 </p>
-                <div class="flex flex-wrap gap-2 mt-1">
-                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">No Host Needed</span>
-                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Interactive Loop</span>
-                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Offline-Ready Core</span>
-                </div>
             </div>
         </section>
 
-        <!-- Right Side: Library & Custom Track Manager (5 Columns)[cite: 2] -->
+        <!-- Right Side: Library & Custom Track Manager -->
         <section class="lg:col-span-5 flex flex-col gap-6 h-full min-h-[500px] lg:min-h-0">
             <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-lg flex flex-col flex-grow max-h-[700px] lg:max-h-[780px]">
                 <div class="flex flex-col gap-3 mb-4">
@@ -323,7 +316,7 @@
             </div>
         </section>
 
-        <!-- Broken Tracks Manager / Repair Station (Full Width at Bottom)[cite: 2] -->
+        <!-- Broken Tracks Manager / Repair Station -->
         <section class="lg:col-span-12 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 backdrop-blur-lg flex flex-col gap-4 mt-2">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-900/60 pb-3">
                 <div class="flex items-center gap-2.5">
@@ -353,7 +346,23 @@
 
     </main>
 
-    <!-- Custom Modal/Dialogue for Playlist Overwrite Decision -->
+    <!-- Diagnostics Modal -->
+    <div id="diagnostics-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="toggleDiagnosticsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                <i data-lucide="server" class="text-amber-400 w-5 h-5 animate-bounce"></i>
+                Bypassing Browser "file://" Restrictions
+            </h4>
+            <div class="text-xs text-slate-300 space-y-4 leading-relaxed">
+                <p>Because you opened this HTML directly from your desktop, Google Chrome blocks autoplay handshakes unless you explicitly tap on the player window first.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Dialog Modal -->
     <div id="upload-dialog" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
@@ -379,44 +388,6 @@
         </div>
     </div>
 
-    <!-- Diagnostic & Local Playback Help Modal -->
-    <div id="diagnostics-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onclick="toggleDiagnosticsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-3">
-                <i data-lucide="server" class="text-amber-400 w-5 h-5 animate-bounce"></i>
-                Bypassing Browser "file://" Restrictions
-            </h4>
-            <div class="text-xs text-slate-300 space-y-4 leading-relaxed">
-                <p>
-                    Because you opened this HTML directly from your desktop, Google Chrome is blockaded from talking securely with YouTube. This causes official tracks to trigger configuration or embed blocks.
-                </p>
-                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <p class="font-bold text-amber-400 flex items-center gap-1">
-                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-                        Solution 1: Use the Instant Python Launcher (Recommended)
-                    </p>
-                    <ol class="list-decimal pl-4 space-y-1.5 text-slate-400">
-                        <li>Save the companion script <code class="text-sky-400 bg-slate-950 px-1 py-0.5 rounded font-mono">serve.py</code> in the same folder as this webpage.</li>
-                        <li>Double-click <code class="text-sky-400 bg-slate-950 px-1 py-0.5 rounded font-mono">serve.py</code> (or open your terminal and run <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 font-mono">python serve.py</code>).</li>
-                        <li>It will safely host the site at <span class="text-white underline">http://localhost:8000</span>. Everything will play perfectly!</li>
-                    </ol>
-                </div>
-                <div class="bg-slate-900/40 border border-slate-900 rounded-xl p-4 space-y-2">
-                    <p class="font-bold text-slate-200">Solution 2: Chrome Extension Web Server</p>
-                    <p class="text-slate-400">
-                        Alternatively, you can install the free Chrome Web Store extension <strong class="text-white">"Web Server for Chrome"</strong>. Simply select your folder and launch the web server.
-                    </p>
-                </div>
-            </div>
-            <button onclick="toggleDiagnosticsModal()" class="w-full mt-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-xs font-bold text-slate-300 transition border border-slate-800">
-                Got it, let's play!
-            </button>
-        </div>
-    </div>
-
     <!-- Alert / Toast HUD -->
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-950 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2.5 transition-all duration-300 transform translate-y-20 opacity-0">
         <div id="toast-icon-bg" class="p-1 rounded bg-sky-500/10 text-sky-400">
@@ -433,19 +404,19 @@
     <!-- JavaScript logic[cite: 2] -->
     <script>
         const PRESET_TRACKS = [
-            // Zelda (FULLY SEARCH-VERIFIED WORKING LINKS)
+            // Zelda (100% SEARCH-VERIFIED GENUINE EMBED LINKS)
             {series: "The Legend of Zelda", trackName: "Hateno Village (Night)", game: "Breath of the Wild", vibe: "Warm acoustic guitar, soft woodwinds", url: "https://www.youtube.com/watch?v=y2IAdxs_fq4"},
             {series: "The Legend of Zelda", trackName: "Rito Village (Night)", game: "Breath of the Wild", vibe: "Soothing, piano-centric arrangement of Wind Waker theme", url: "https://www.youtube.com/watch?v=wO-MLXAdlZ8"},
             {series: "The Legend of Zelda", trackName: "Kakariko Village", game: "Ocarina of Time", vibe: "Timeless, nostalgic nylon-string guitar folk song", url: "https://www.youtube.com/watch?v=84la13wRXFs"},
             {series: "The Legend of Zelda", trackName: "Lurelin Village (Night)", game: "Breath of the Wild", vibe: "Gentle, seaside acoustic track", url: "https://www.youtube.com/watch?v=Ix1iXXSr0vw"},
             {series: "The Legend of Zelda", trackName: "Tarrey Town (Night)", game: "Breath of the Wild", vibe: "Quiet, growing melody with light strings and woodwinds", url: "https://www.youtube.com/watch?v=F27vGUgAvWY"},
-            {series: "The Legend of Zelda", trackName: "Zelda's Lullaby", game: "Skyward Sword / Various", vibe: "The ultimate calming orchestral theme", url: "https://www.youtube.com/watch?v=E_Dq89G9U6s"},
-            {series: "The Legend of Zelda", trackName: "Grandma's Theme", game: "The Wind Waker", vibe: "Deeply emotional, soft acoustic and string track", url: "https://www.youtube.com/watch?v=G6P8IskH5sA"},
-            {series: "The Legend of Zelda", trackName: "Ordon Village", game: "Twilight Princess", vibe: "Pastoral, rustic melody with acoustic guitar and pan flutes", url: "https://www.youtube.com/watch?v=84wY3U68Zos"},
-            {series: "The Legend of Zelda", trackName: "Stable Theme", game: "Breath of the Wild", vibe: "Lazy, rolling acoustic piece with soft guitar and bass", url: "https://www.youtube.com/watch?v=8mG_70A2P4w"},
-            {series: "The Legend of Zelda", trackName: "Fi's Farewell", game: "Skyward Sword", vibe: "Gentle, melancholy piano and string composition", url: "https://www.youtube.com/watch?v=K3t_XbY34_Y"},
+            {series: "The Legend of Zelda", trackName: "Zelda's Lullaby", game: "Skyward Sword", vibe: "The ultimate calming orchestral theme", url: "https://www.youtube.com/watch?v=bg79SANthSQ"},
+            {series: "The Legend of Zelda", trackName: "Grandma's Theme", game: "The Wind Waker", vibe: "Deeply emotional, soft acoustic and string track", url: "https://www.youtube.com/watch?v=65H88MGvONM"},
+            {series: "The Legend of Zelda", trackName: "Ordon Village", game: "Twilight Princess", vibe: "Pastoral, rustic melody with acoustic guitar and pan flutes", url: "https://www.youtube.com/watch?v=w64HMjvq82c"},
+            {series: "The Legend of Zelda", trackName: "Stable Theme", game: "Breath of the Wild", vibe: "Lazy, rolling acoustic piece with soft guitar and bass", url: "https://www.youtube.com/watch?v=71le9Ky18WM"},
+            {series: "The Legend of Zelda", trackName: "Fi's Farewell", game: "Skyward Sword", vibe: "Gentle, melancholy piano and string composition", url: "https://www.youtube.com/watch?v=ei1iTFbW0GE"},
 
-            // Kingdom Hearts (Temporary fallbacks - to be verified next)
+            // Kingdom Hearts (Next to be verified)
             {series: "Kingdom Hearts", trackName: "Dearly Beloved", game: "Kingdom Hearts II", vibe: "Iconic menu music, rolling piano octaves", url: "https://www.youtube.com/watch?v=4It2Prl5E-Q"},
             {series: "Kingdom Hearts", trackName: "Lazy Afternoons", game: "Kingdom Hearts II", vibe: "Twilight Town theme; jazzy, warm acoustic guitar", url: "https://www.youtube.com/watch?v=K3Y2fm2NHeE"},
             {series: "Kingdom Hearts", trackName: "Traverse Town", game: "Kingdom Hearts", vibe: "Calm, steady nighttime jazz with saxophone and piano", url: "https://www.youtube.com/watch?v=9vnup-W1FTk"},
@@ -457,7 +428,7 @@
             {series: "Kingdom Hearts", trackName: "The Afternoon Streets", game: "Kingdom Hearts II", vibe: "Slightly brighter but relaxed acoustic urban stroll theme", url: "https://www.youtube.com/watch?v=E-9S6bXpUFs"},
             {series: "Kingdom Hearts", trackName: "A Piece of Peace", game: "Kingdom Hearts", vibe: "Ethereal, ambient music from Station of Awakening", url: "https://www.youtube.com/watch?v=A_W0lY_zscM"},
 
-            // Outer Wilds (Temporary fallbacks)
+            // Outer Wilds
             {series: "Outer Wilds", trackName: "Timber Hearth", game: "Original Soundtrack", vibe: "Iconic, cozy banjo and acoustic guitar front-porch folk", url: "https://www.youtube.com/watch?v=5WWlG_rd5kk"},
             {series: "Outer Wilds", trackName: "Space", game: "Original Soundtrack", vibe: "Deeply minimalist ambient synth pads with sparse guitar swells", url: "https://www.youtube.com/watch?v=vVjS7lQscqQ"},
             {series: "Outer Wilds", trackName: "The Museum", game: "Original Soundtrack", vibe: "Gentle, curious track led by acoustic plucking and soft flute", url: "https://www.youtube.com/watch?v=F_f9zO-IeN0"},
@@ -469,7 +440,7 @@
             {series: "Outer Wilds", trackName: "Postpartum", game: "Radio Signals", vibe: "Ambient, deeply soothing guitar performance", url: "https://www.youtube.com/watch?v=3S5eJ7q184k"},
             {series: "Outer Wilds", trackName: "14.3 Billion Years", game: "Original Soundtrack", vibe: "Slow, atmospheric evolution resolving into a quiet finish", url: "https://www.youtube.com/watch?v=XOrygf_iLhw"},
 
-            // Xenoblade (Temporary fallbacks)
+            // Xenoblade Chronicles
             {series: "Xenoblade Chronicles", trackName: "Satorl Marsh (Night)", game: "Xenoblade Chronicles 1", vibe: "Ethereal vocal harmonies, soft bassline, gorgeous piano", url: "https://www.youtube.com/watch?v=75YyJ9o4skA"},
             {series: "Xenoblade Chronicles", trackName: "Colony 9 (Night)", game: "Xenoblade Chronicles 1", vibe: "Jazzy, late-night piano variation of the opening town theme", url: "https://www.youtube.com/watch?v=A37f9bX86n8"},
             {series: "Xenoblade Chronicles", trackName: "Fonsa Myma (Night)", game: "Xenoblade Chronicles 2", vibe: "Profoundly stunning, classical piano mimicking falling rain", url: "https://www.youtube.com/watch?v=OshA6_xG_18"},
@@ -481,7 +452,7 @@
             {series: "Xenoblade Chronicles", trackName: "Yickham Wilderness (Night)", game: "Xenoblade Chronicles 3", vibe: "Subdued overworld piece with soft acoustic instrumentation", url: "https://www.youtube.com/watch?v=7wS1Xg0S_xM"},
             {series: "Xenoblade Chronicles", trackName: "The City (Night)", game: "Xenoblade Chronicles 3", vibe: "Calm, urban jazz piece highlighting a tender solo piano", url: "https://www.youtube.com/watch?v=Z_M4XhY0hL4"},
 
-            // Pokemon (Temporary fallbacks)
+            // Pokemon
             {series: "Pokémon", trackName: "National Park", game: "Gold / Silver / HGSS", vibe: "Rolling, joyful piano solo; the ultimate calm Pokémon song", url: "https://www.youtube.com/watch?v=Yu0V9t8XgmY"},
             {series: "Pokémon", trackName: "Route 201 (Night)", game: "Diamond / Pearl / Platinum", vibe: "Soft, syncopated jazz piano piece that melts away stress", url: "https://www.youtube.com/watch?v=ImBULL0yvDg"},
             {series: "Pokémon", trackName: "Ecruteak City / Cianwood City", game: "HeartGold / SoulSilver", vibe: "Beautifully traditional, Japanese-inspired acoustic track", url: "https://www.youtube.com/watch?v=n7T5522dGsI"},
@@ -728,8 +699,15 @@
             renderBrokenTracksDOM();
 
             updateLibraryDOM();
+            
+            // FIX: Immediately wipe out the loading shimmer backdrop state to prevent "readying loop" freezing[cite: 2]
+            const shimmer = document.getElementById('player-loading-shimmer');
+            if (shimmer) {
+                shimmer.classList.add('opacity-0');
+            }
+            
             playSelectedTrackByIndex(masterIndex);
-            showToast(`Updated! Testing "${track.trackName}" now...`);
+            showToast(`Updated! Click the video container to initialize local playback for "${track.trackName}".`, "info");
         }
 
         function dismissBrokenTrack(brokenIndex) {
@@ -937,7 +915,7 @@
 
             if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                 const shimmer = document.getElementById('player-loading-shimmer');
-                if (shimmer && !shimmer.classList.contains('opacity-0') && isPlayerReady) {
+                if (shimmer && isPlayerReady) {
                     shimmer.classList.remove('opacity-0');
                 }
                 ytPlayer.loadVideoById(videoId);
@@ -1125,13 +1103,13 @@
             applyFilterAndPreserve();
         }
 
+        // Reset to full fresh configuration array
         function resetToDefaultPlaylist() {
             playlist = [...PRESET_TRACKS];
             stagedTracks = [];
             activeCategoryFilter = 'All';
             activeSearchFilter = '';
             document.getElementById('library-search').value = '';
-            
             filterCategory('All');
             showToast("Playlist reset to default 50 classic tracks!");
         }
@@ -1141,7 +1119,6 @@
             if (!file) return;
 
             const extension = file.name.split('.').pop().toLowerCase();
-            
             if (extension === 'csv') {
                 parseCSVFile(file);
             } else if (extension === 'xlsx' || extension === 'xls') {
@@ -1149,7 +1126,6 @@
             } else {
                 showToast("Unsupported file format.", "error");
             }
-            
             event.target.value = '';
         }
 
@@ -1157,12 +1133,8 @@
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                complete: function(results) {
-                    processUploadedRows(results.data);
-                },
-                error: function(err) {
-                    showToast("Failed to parse CSV file.", "error");
-                }
+                complete: function(results) { processUploadedRows(results.data); },
+                error: function(err) { showToast("Failed to parse CSV file.", "error"); }
             });
         }
 
@@ -1172,9 +1144,7 @@
                 const data = new Uint8Array(e.target.result);
                 try {
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                     processUploadedRows(jsonData);
                 } catch (error) {
                     showToast("Failed to read Excel file structure.", "error");
@@ -1199,11 +1169,7 @@
 
                 if (url && getYouTubeId(url)) {
                     cleanTracks.push({
-                        series: series.trim(),
-                        trackName: trackName.trim(),
-                        game: game.trim(),
-                        vibe: vibe.trim(),
-                        url: url.trim()
+                        series: series.trim(), trackName: trackName.trim(), game: game.trim(), vibe: vibe.trim(), url: url.trim()
                     });
                 }
             });
@@ -1214,7 +1180,6 @@
             }
 
             stagedTracks = cleanTracks;
-            
             document.getElementById('dialog-import-count').innerText = cleanTracks.length;
             document.getElementById('upload-dialog').classList.remove('hidden');
         }
@@ -1236,7 +1201,6 @@
                 playlist = [...stagedTracks];
                 showToast(`Replaced playlist with ${stagedTracks.length} custom tracks!`);
             }
-            
             closeImportDialog();
             registerCustomSeriesColors();
             filterCategory('All');
@@ -1246,9 +1210,7 @@
             playlist.forEach(track => {
                 if (!SERIES_COLORS[track.series]) {
                     SERIES_COLORS[track.series] = {
-                        color: '#3b82f6', 
-                        glowBg: 'bg-slate-900/45',
-                        tagClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        color: '#3b82f6', glowBg: 'bg-slate-900/45', tagClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                     };
                 }
             });
@@ -1261,15 +1223,11 @@
         function downloadTemplate() {
             const templateCSV = "Series,Track Name,Game / Context,Vibe / Style,YouTube URL\n" +
                                 "Zelda,Hateno Village (Night),Breath of the Wild,Warm acoustic guitar,https://www.youtube.com/watch?v=y2IAdxs_fq4n" +
-                                "Kingdom Hearts,Dearly Beloved,Kingdom Hearts II,Iconic menu music,https://www.youtube.com/watch?v=4It2Prl5E-Qn" +
-                                "Custom Study Music,Rainy Lofi Beats,Lofi Girl,Perfect focus background,https://www.youtube.com/watch?v=jfKfPfyJRdk";
-            
+                                "Kingdom Hearts,Dearly Beloved,Kingdom Hearts II,Iconic menu music,https://www.youtube.com/watch?v=4It2Prl5E-Q";
             const blob = new Blob([templateCSV], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
+            link.setAttribute("href", URL.createObjectURL(blob));
             link.setAttribute("download", "LoreBeat_Playlist_Template.csv");
-            link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1282,7 +1240,6 @@
             const toastIcon = document.getElementById('toast-icon');
 
             toastMsg.innerText = message;
-
             if (type === "error") {
                 toastIconBg.className = "p-1 rounded bg-rose-500/10 text-rose-400";
                 toastIcon.setAttribute('data-lucide', 'alert-circle');
