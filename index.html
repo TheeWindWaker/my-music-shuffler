@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoreBeat - Video Game Music Shuffler</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SheetJS (XLSX parsing) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- PapaParse (CSV parsing) -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
     <style>
@@ -76,12 +71,12 @@
                 extend: {
                     colors: {
                         brand: {
-                            Zelda: '#10b981',      // Emerald
-                            KingdomHearts: '#6366f1', // Indigo
-                            OuterWilds: '#f59e0b', // Amber
-                            Xenoblade: '#06b6d4',  // Cyan
-                            Pokemon: '#f43f5e',    // Rose
-                            Custom: '#3b82f6'      // Blue
+                            Zelda: '#10b981',      
+                            KingdomHearts: '#6366f1', 
+                            OuterWilds: '#f59e0b', 
+                            Xenoblade: '#06b6d4',  
+                            Pokemon: '#f43f5e',    
+                            Custom: '#3b82f6'      
                         }
                     }
                 }
@@ -91,13 +86,11 @@
 </head>
 <body class="text-slate-100 min-h-screen relative flex flex-col selection:bg-sky-500/30 selection:text-sky-200">
 
-    <!-- Glowing Background Ambient Spheres -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div id="glow-1" class="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full ambient-glow bg-emerald-950/40"></div>
         <div id="glow-2" class="absolute -bottom-[20%] -right-[10%] w-[50vw] h-[50vw] rounded-full ambient-glow bg-slate-900/60"></div>
     </div>
 
-    <!-- Main Navigation Bar -->
     <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -112,21 +105,17 @@
                 </div>
             </div>
 
-            <!-- Global Upload & Help Actions -->
             <div class="flex items-center gap-3">
-                <!-- Local Host Helper Status Badge -->
                 <button onclick="toggleDiagnosticsModal()" id="local-status-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-400 transition hover:bg-amber-500/20">
                     <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
                     Local File Mode (Get Help)
                 </button>
 
-                <!-- Preset Controller -->
                 <button onclick="resetToDefaultPlaylist()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 bg-slate-900/40 text-xs text-slate-300 transition hover:bg-slate-900">
                     <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     Reset Playlist
                 </button>
 
-                <!-- Excel / CSV Upload Button -->
                 <label class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-lg shadow-sky-500/10 active:scale-95">
                     <i data-lucide="upload-cloud" class="w-4 h-4"></i>
                     <span>Upload Playlist</span>
@@ -136,28 +125,20 @@
         </div>
     </header>
 
-    <!-- Main Work Area -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 relative">
         
-        <!-- Left Side: Interactive Video Player & Visualizer (7 Columns) -->
         <section class="lg:col-span-7 flex flex-col gap-6">
-            
-            <!-- Current Track Showcase / Visualizer Card -->
             <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-lg shadow-2xl flex flex-col gap-5 relative overflow-hidden group">
-                <!-- Theme Accent Border Highlight -->
-                <div id="theme-border" class="absolute inset-x-0 top-0 h-[3px] bg-sky-500 transition-all duration-1000"></div>
+                <div id="theme-border" class="absolute inset-x-0 top-0 h-[3px] bg-slate-500 transition-all duration-1000"></div>
 
-                <!-- YouTube Player Container -->
                 <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-800 group-hover:border-slate-700/80 transition shadow-inner">
                     <div id="yt-player-container" class="w-full h-full absolute inset-0">
                         <div id="youtube-iframe-placeholder"></div>
                     </div>
-                    <!-- Minimalist Overlay when loading -->
                     <div id="player-loading-shimmer" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-4 transition-opacity duration-300 pointer-events-none z-20">
                         <div class="w-12 h-12 rounded-full border-4 border-slate-700 border-t-sky-500 animate-spin"></div>
                         <p class="text-sm text-slate-400 font-medium">Readying your loop...</p>
                     </div>
-                    <!-- Playback Error Fallback Interface Overlay -->
                     <div id="player-error-fallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center gap-4 transition-opacity duration-300 opacity-0 pointer-events-none z-30">
                         <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
                             <i data-lucide="alert-octagon" class="w-6 h-6"></i>
@@ -165,7 +146,7 @@
                         <div>
                             <h4 id="error-fallback-title" class="font-bold text-white text-base">YouTube Embed Blocked</h4>
                             <p id="error-fallback-message" class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
-                                Nintendo/Square Enix block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
+                                Publisher blocks official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center justify-center gap-2 mt-2 pointer-events-auto">
@@ -181,35 +162,32 @@
                     </div>
                 </div>
 
-                <!-- Meta Information Block -->
                 <div class="flex items-start justify-between gap-4 mt-2">
                     <div class="flex-1 min-w-0">
-                        <span id="player-series-tag" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 mb-2 transition-all duration-500">
-                            Custom
+                        <span id="player-series-tag" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20 mb-2 transition-all duration-500">
+                            No Track Loaded
                         </span>
                         <h2 id="player-track-title" class="text-xl sm:text-2xl font-bold tracking-tight text-white truncate drop-shadow-sm">
-                            Upload a playlist to begin
+                            Upload a CSV to begin
                         </h2>
                         <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-sm text-slate-400 mt-1">
                             <span id="player-game-title" class="flex items-center gap-1.5 font-medium text-slate-300">
                                 <i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-slate-400"></i>
-                                
+                                --
                             </span>
                             <span class="text-slate-600 hidden sm:inline">•</span>
                             <span id="player-vibe-text" class="italic flex items-center gap-1">
                                 <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-500"></i>
-                                Waiting for data...
+                                --
                             </span>
                         </div>
                     </div>
 
-                    <!-- External Link to YouTube -->
                     <a id="player-yt-link" href="#" target="_blank" class="p-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900/80 text-slate-400 hover:text-white transition active:scale-95" title="Open directly on YouTube">
                         <i data-lucide="external-link" class="w-5 h-5"></i>
                     </a>
                 </div>
 
-                <!-- Music Scrubber & Time Controls -->
                 <div class="mt-4">
                     <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5 font-mono">
                         <span id="player-current-time">0:00</span>
@@ -220,20 +198,14 @@
                     </div>
                 </div>
 
-                <!-- Master Audio Player Control HUD -->
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-6 mt-2 pt-2 border-t border-slate-900">
-                    
-                    <!-- Auxiliary Modes (Shuffle / Loop Modes) -->
                     <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
-                        <!-- Shuffle Mode Toggle -->
                         <button id="btn-shuffle" onclick="toggleShuffle()" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900/30 transition text-slate-400 hover:text-white hover:bg-slate-900/60" title="Toggle Shuffle Mode">
                             <i data-lucide="shuffle" class="w-4 h-4"></i>
                         </button>
-                        <!-- Loop Mode Toggle -->
                         <button id="btn-loop" onclick="toggleLoop()" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900/30 transition text-slate-400 hover:text-white hover:bg-slate-900/60" title="Repeat Track">
                             <i data-lucide="repeat" class="w-4 h-4"></i>
                         </button>
-                        <!-- Auto Continuous Play -->
                         <button id="btn-autoplay" onclick="toggleAutoPlay()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/30 text-xs font-medium text-slate-400 hover:text-white transition" title="Auto-advance to next song on complete">
                             <span class="relative flex h-2 w-2">
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -243,36 +215,29 @@
                         </button>
                     </div>
 
-                    <!-- Main Playback Actions -->
                     <div class="flex items-center gap-4">
-                        <!-- Previous Track -->
                         <button onclick="playPrevious()" class="p-3 rounded-full border border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900 text-slate-300 hover:text-white transition active:scale-95" title="Previous Track">
                             <i data-lucide="skip-back" class="w-5 h-5 fill-current"></i>
                         </button>
 
-                        <!-- Main Play/Pause Button -->
                         <button id="btn-master-play" onclick="togglePlayPause()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white hover:from-sky-400 hover:to-indigo-500 transition shadow-lg shadow-indigo-500/25 active:scale-95" title="Play / Pause">
                             <i data-lucide="play" id="btn-master-play-icon" class="w-7 h-7 fill-current translate-x-0.5"></i>
                         </button>
 
-                        <!-- Next / Skip Track (triggers random if shuffle is on) -->
                         <button onclick="playNext()" class="p-3 rounded-full border border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900 text-slate-300 hover:text-white transition active:scale-95" title="Next Track">
                             <i data-lucide="skip-forward" class="w-5 h-5 fill-current"></i>
                         </button>
                     </div>
 
-                    <!-- Volume Panel -->
                     <div class="flex items-center gap-3 w-full sm:w-36 justify-center sm:justify-end">
                         <button onclick="toggleMute()" class="text-slate-400 hover:text-white transition" id="btn-volume-icon">
                             <i data-lucide="volume-2" class="w-4.5 h-4.5"></i>
                         </button>
                         <input type="range" id="volume-slider" min="0" max="100" value="70" class="w-24 sm:w-full accent-sky-500" oninput="adjustVolume(this.value)">
                     </div>
-
                 </div>
             </div>
 
-            <!-- Pro Tips / Ambient Controller Box -->
             <div class="bg-slate-950/30 border border-slate-900/80 rounded-2xl p-5 flex flex-col gap-3">
                 <h3 class="font-semibold text-sm text-slate-300 flex items-center gap-2">
                     <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
@@ -289,13 +254,9 @@
             </div>
         </section>
 
-        <!-- Right Side: Library & Custom Track Manager (5 Columns) -->
         <section class="lg:col-span-5 flex flex-col gap-6 h-full min-h-[500px] lg:min-h-0">
-            
-            <!-- Library panel card container -->
             <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-lg flex flex-col flex-grow max-h-[700px] lg:max-h-[780px]">
                 
-                <!-- Search & Filter Controls -->
                 <div class="flex flex-col gap-3 mb-4">
                     <div class="flex items-center justify-between">
                         <h3 class="font-bold text-lg text-white flex items-center gap-2">
@@ -307,41 +268,19 @@
                         </span>
                     </div>
 
-                    <!-- Search Input -->
                     <div class="relative">
                         <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
                         <input type="text" id="library-search" oninput="filterPlaylist()" placeholder="Search track, game, or notes..." class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700/80 focus:border-sky-500/80 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-100 placeholder-slate-500 transition focus:outline-none focus:ring-1 focus:ring-sky-500/20">
                     </div>
 
-                    <!-- Series Quick Filter Chips (Horizontal Scrolling Container) -->
                     <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin" id="series-filters">
-                        <button onclick="filterCategory('All')" class="category-chip active flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 transition hover:bg-sky-500/30">
-                            All
-                        </button>
-                        <button onclick="filterCategory('The Legend of Zelda')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
-                            Zelda
-                        </button>
-                        <button onclick="filterCategory('Kingdom Hearts')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
-                            Kingdom Hearts
-                        </button>
-                        <button onclick="filterCategory('Outer Wilds')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
-                            Outer Wilds
-                        </button>
-                        <button onclick="filterCategory('Xenoblade Chronicles')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
-                            Xenoblade
-                        </button>
-                        <button onclick="filterCategory('Pokémon')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
-                            Pokémon
-                        </button>
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Playlist Table/List Zone -->
                 <div class="flex-grow overflow-y-auto pr-1 border border-slate-900 rounded-xl bg-slate-950/40 p-1" id="playlist-list">
-                    <!-- Dynamic playlist list rows are rendered here -->
+                    <div class="text-center py-10 text-slate-500 text-sm">Upload a playlist CSV to view tracks here.</div>
                 </div>
 
-                <!-- Quick CSV Template Download helper -->
                 <div class="mt-4 pt-3 border-t border-slate-900 flex justify-between items-center text-xs text-slate-500">
                     <span>Formats supported: .xlsx, .xls, .csv</span>
                     <button onclick="downloadTemplate()" class="text-sky-400 hover:underline flex items-center gap-1">
@@ -351,7 +290,6 @@
             </div>
         </section>
 
-        <!-- Broken Tracks Manager / Repair Station (Full Width at Bottom) -->
         <section class="lg:col-span-12 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 backdrop-blur-lg flex flex-col gap-4 mt-2">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-900/60 pb-3">
                 <div class="flex items-center gap-2.5">
@@ -371,9 +309,7 @@
                 </div>
             </div>
 
-            <!-- Broken Tracks List -->
             <div id="broken-tracks-container" class="space-y-3 max-h-60 overflow-y-auto pr-1">
-                <!-- Fallback empty state -->
                 <div id="broken-empty-state" class="text-center py-6 text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
                     <i data-lucide="shield-check" class="w-8 h-8 text-slate-600"></i>
                     No broken tracks logged yet. Your playlist is fully healthy!
@@ -383,7 +319,6 @@
 
     </main>
 
-    <!-- Custom Modal/Dialogue for Playlist Overwrite Decision -->
     <div id="upload-dialog" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
@@ -409,7 +344,6 @@
         </div>
     </div>
 
-    <!-- Diagnostic & Local Playback Help Modal -->
     <div id="diagnostics-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
             <button onclick="toggleDiagnosticsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
@@ -447,7 +381,6 @@
         </div>
     </div>
 
-    <!-- Alert / Toast HUD -->
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-950 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2.5 transition-all duration-300 transform translate-y-20 opacity-0">
         <div id="toast-icon-bg" class="p-1 rounded bg-sky-500/10 text-sky-400">
             <i data-lucide="info" class="w-4 h-4" id="toast-icon"></i>
@@ -455,13 +388,12 @@
         <span id="toast-message" class="text-xs font-medium text-slate-300">Playlist imported successfully!</span>
     </div>
 
-    <!-- Footer Meta -->
     <footer class="border-t border-slate-900 bg-slate-950/60 py-4 text-center text-xs text-slate-500 mt-auto z-10">
         <p>© 2026 LoreBeat. Music content belongs directly to Nintendo, Square Enix, Mobius Digital, and Monolith Soft.</p>
     </footer>
 
-    <!-- JavaScript logic -->
     <script>
+        // Start completely empty
         const PRESET_TRACKS = [];
 
         let playlist = [...PRESET_TRACKS];
@@ -482,13 +414,9 @@
         let lastVolume = 70;
         let isPlayerReady = false;
 
-        // Broken Tracks Tracker State
         let brokenTracks = [];
-
-        // Custom imported tracks ready for confirm modal
         let stagedTracks = [];
 
-        // Global colors map based on category
         const SERIES_COLORS = {
             'The Legend of Zelda': { color: '#10b981', glowBg: 'bg-emerald-950/45', tagClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
             'Kingdom Hearts': { color: '#6366f1', glowBg: 'bg-indigo-950/45', tagClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
@@ -499,7 +427,6 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Load YouTube Iframe API asynchronously
             const tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
             const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -507,7 +434,6 @@
 
             lucide.createIcons();
             
-            // Check if page is hosted locally on file system
             const isLocalFile = window.location.protocol === 'file:';
             const statusBadge = document.getElementById('local-status-badge');
             if (isLocalFile) {
@@ -517,17 +443,21 @@
                 statusBadge.innerHTML = `<span class="h-2 w-2 rounded-full bg-emerald-500"></span> Server Mode Active`;
             }
 
-            // Build current track views
+            // Initialize dynamic buttons (just "All" when empty)
+            renderCategoryFilters();
+            
             updateLibraryDOM();
             updateControlsUI();
-            setTrackDetailsUI(filteredTracks[currentTrackIndex]);
+            
+            if (filteredTracks.length > 0) {
+                setTrackDetailsUI(filteredTracks[currentTrackIndex]);
+            }
         });
 
         function onYouTubeIframeAPIReady() {
-            const firstVideoUrl = filteredTracks.length > 0 ? filteredTracks[currentTrackIndex].url : "";
-            const initialVideoId = getYouTubeId(firstVideoUrl) || "y2IAdxs_fq4";
+            const firstVideoUrl = filteredTracks.length > 0 ? filteredTracks[currentTrackIndex].url : null;
+            const initialVideoId = getYouTubeId(firstVideoUrl) || "y2IAdxs_fq4"; // Fallback ID so player doesn't crash on empty load
 
-            // Determine if protocol allows origin parameters (strictly exclude on local file schemes)
             let isHttp = window.location.protocol.startsWith('http');
             let originUrl = isHttp ? window.location.origin : undefined;
 
@@ -537,7 +467,7 @@
                 videoId: initialVideoId,
                 playerVars: {
                     playsinline: 1,
-                    controls: 1, // Fallback controls are necessary for desktop file access
+                    controls: 1, 
                     showinfo: 0,
                     rel: 0,
                     modestbranding: 1,
@@ -550,23 +480,19 @@
                 }
             });
 
-            // Fallback Timer to dismiss the loading shroud if local browser protocols block standard YouTube ready hooks
             setTimeout(() => {
                 if (!isPlayerReady) {
-                    console.log("YouTube Player API Ready event timed out. Fading out loading shroud as a safe default.");
                     const shimmer = document.getElementById('player-loading-shimmer');
                     if (shimmer) {
                         shimmer.classList.add('opacity-0');
                         shimmer.style.pointerEvents = 'none';
                     }
-                    showToast("Running locally! Click directly on the YouTube video panel if autoplay is restricted.", "info");
                 }
             }, 3000);
         }
 
         function onPlayerReady(event) {
             isPlayerReady = true;
-            // Hide loading overlay
             const shimmer = document.getElementById('player-loading-shimmer');
             if (shimmer) {
                 shimmer.classList.add('opacity-0');
@@ -587,9 +513,7 @@
                 if (shimmer) {
                     shimmer.classList.add('opacity-0');
                 }
-                // Hide fallback overlay if active
-                document.getElementById('player-error-fallback').classList.add('opacity-0');
-                document.getElementById('player-error-fallback').classList.add('pointer-events-none');
+                document.getElementById('player-error-fallback').classList.add('opacity-0', 'pointer-events-none');
             } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.CUED) {
                 icon.setAttribute('data-lucide', 'play');
                 lucide.createIcons();
@@ -610,16 +534,13 @@
         function onPlayerError(event) {
             const activeTrack = filteredTracks[currentTrackIndex];
             
-            // Log to Broken Tracks list
             if (activeTrack && !brokenTracks.some(t => t.url === activeTrack.url)) {
                 brokenTracks.push(activeTrack);
                 renderBrokenTracksDOM();
                 showToast(`"${activeTrack.trackName}" logged in the Repair Station at the bottom!`, "info");
             }
 
-            // YouTube Error Codes: 101 and 150 mean the video owner blocks embedded playback on this domain/protocol.
             if (event.data === 101 || event.data === 150 || event.data === 2 || event.data === 5) {
-                console.warn("YouTube Embed Playback Blocked. Displaying graceful fallback interface.");
                 const fallbackOverlay = document.getElementById('player-error-fallback');
                 const fallbackTitle = document.getElementById('error-fallback-title');
                 const fallbackMessage = document.getElementById('error-fallback-message');
@@ -628,7 +549,6 @@
                 if (fallbackOverlay && activeTrack) {
                     fallbackLink.href = activeTrack.url;
                     
-                    // Customize error text dynamically based on the protocol and game series
                     if (window.location.protocol === 'file:') {
                         fallbackTitle.innerText = "Local File Restricted";
                         fallbackMessage.innerHTML = `Chrome blocks secure YouTube embeds when opened directly as a local file (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>). Use your GitHub Pages URL to bypass this restriction!`;
@@ -653,9 +573,6 @@
             modal.classList.toggle('hidden');
         }
 
-        /* ---------------------------------------------------------------------
-           Broken Tracks Repair Manager Operations
-           --------------------------------------------------------------------- */
         function renderBrokenTracksDOM() {
             const container = document.getElementById('broken-tracks-container');
             if (brokenTracks.length === 0) {
@@ -709,17 +626,13 @@
                 return;
             }
 
-            // Update the URL in the master playlist
             const masterIndex = playlist.indexOf(track);
             if (masterIndex !== -1) {
                 playlist[masterIndex].url = newUrl;
             }
 
-            // Remove from broken tracks list
             brokenTracks.splice(brokenIndex, 1);
             renderBrokenTracksDOM();
-
-            // Refresh DOM & Play the updated track to verify it works
             updateLibraryDOM();
             playSelectedTrackByIndex(masterIndex);
             showToast(`Updated! Testing "${track.trackName}" now...`);
@@ -732,7 +645,6 @@
         }
 
         function exportUpdatedPlaylist() {
-            // Reconstruct the exact CSV format that the importer understands
             let csvContent = "Series,Track Name,Game / Context,Vibe / Style,YouTube URL\n";
             
             playlist.forEach(track => {
@@ -757,7 +669,6 @@
             showToast("Successfully exported updated playlist!");
         }
 
-        // Start/Stop interval updating scrubber
         function startProgressTracker() {
             if (progressInterval) clearInterval(progressInterval);
             progressInterval = setInterval(() => {
@@ -774,7 +685,6 @@
             }, 500);
         }
 
-        // Action: Scrub through video track timeline
         function scrubVideo(percentValue) {
             if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
                 const duration = ytPlayer.getDuration();
@@ -783,36 +693,28 @@
             }
         }
 
-        // Dynamic visual update matching video properties
         function setTrackDetailsUI(track) {
             if (!track) return;
 
             document.getElementById('player-track-title').innerText = track.trackName;
             document.getElementById('player-game-title').innerHTML = `<i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-slate-400"></i> ${track.game}`;
-            document.getElementById('player-vibe-text').innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-500"></i> ${track.vibe || 'Chill ambient session theme'}`;
+            document.getElementById('player-vibe-text').innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-500"></i> ${track.vibe || 'Ambient theme'}`;
             document.getElementById('player-yt-link').href = track.url;
 
-            // Apply dynamic visual design scheme
             const styleProps = SERIES_COLORS[track.series] || SERIES_COLORS['Custom'];
             
-            // Adjust glowing backdrop gradients
             const glow1 = document.getElementById('glow-1');
             glow1.className = `absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full ambient-glow ${styleProps.glowBg}`;
             
-            // Adjust series top accent & badge style
             const badge = document.getElementById('player-series-tag');
             badge.innerText = track.series;
             badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2 transition-all duration-500 ${styleProps.tagClass}`;
 
-            // Set accent top bar of card
             document.getElementById('theme-border').style.backgroundColor = styleProps.color;
-            
-            // Custom CSS variable injection for the custom track timeline slider colors
             document.documentElement.style.setProperty('--slider-thumb-color', styleProps.color);
 
             lucide.createIcons();
             
-            // Select active track visually in list view
             document.querySelectorAll('.playlist-row').forEach(row => {
                 row.classList.remove('bg-slate-900/60', 'border-sky-500/20', 'text-white');
                 row.classList.add('border-transparent');
@@ -824,7 +726,6 @@
             }
         }
 
-        // Format raw float time to readable M:SS structure
         function formatTime(seconds) {
             if (isNaN(seconds) || seconds === undefined) return "0:00";
             const mins = Math.floor(seconds / 60);
@@ -832,7 +733,6 @@
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
 
-        // Check if track matches active category and search filter
         function matchesFilters(track) {
             const matchesCategory = (activeCategoryFilter === 'All' || track.series === activeCategoryFilter);
             
@@ -840,15 +740,50 @@
             const matchesSearch = !activeSearchFilter || 
                 track.trackName.toLowerCase().includes(searchLower) || 
                 track.game.toLowerCase().includes(searchLower) || 
-                track.vibe.toLowerCase().includes(searchLower);
+                (track.vibe && track.vibe.toLowerCase().includes(searchLower));
 
             return matchesCategory && matchesSearch;
         }
 
-        // Render entire playlist rows
+        // ==========================================
+        // DYNAMIC FILTER GENERATION
+        // ==========================================
+        function renderCategoryFilters() {
+            const filterContainer = document.getElementById('series-filters');
+            if (!filterContainer) return;
+
+            // Extract unique series from the active playlist
+            const uniqueSeries = ['All', ...new Set(playlist.map(t => t.series))];
+
+            filterContainer.innerHTML = uniqueSeries.map(seriesName => {
+                const isActive = activeCategoryFilter === seriesName;
+                const activeClass = isActive
+                    ? "category-chip active flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 transition hover:bg-sky-500/30"
+                    : "category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50";
+                
+                // Escape string so onclick doesn't break if a series has an apostrophe
+                const safeName = seriesName.replace(/'/g, "\\'");
+
+                return `<button onclick="filterCategory('${safeName}')" class="${activeClass}">${seriesName}</button>`;
+            }).join('');
+        }
+
+        function filterCategory(categoryName) {
+            activeCategoryFilter = categoryName;
+            renderCategoryFilters(); // Re-render to update the active blue pill visual instantly
+            applyFilterAndPreserve();
+        }
+        // ==========================================
+
         function updateLibraryDOM() {
             const listContainer = document.getElementById('playlist-list');
             listContainer.innerHTML = '';
+
+            if (playlist.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-10 text-slate-500 text-sm">Upload a playlist CSV to view tracks here.</div>`;
+                document.getElementById('track-count-badge').innerText = `0 Tracks`;
+                return;
+            }
 
             let counter = 0;
             playlist.forEach((track, originalIndex) => {
@@ -887,13 +822,11 @@
             lucide.createIcons();
         }
 
-        // Track Select & Direct Execution
         function playSelectedTrackByIndex(globalIndex) {
             const track = playlist[globalIndex];
             if (!filteredTracks.includes(track)) {
                 activeCategoryFilter = 'All';
-                document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active', 'bg-sky-500/20', 'text-sky-400'));
-                document.querySelectorAll('.category-chip')[0].classList.add('active', 'bg-sky-500/20', 'text-sky-400');
+                renderCategoryFilters(); // Sync UI pills
                 applyFilterAndPreserve(track);
             } else {
                 currentTrackIndex = filteredTracks.indexOf(track);
@@ -918,9 +851,14 @@
             }
         }
 
-        // Core Player loading & playback executor
         function loadAndPlay(track) {
             if (!track) return;
+
+            const fallbackOverlay = document.getElementById('player-error-fallback');
+            if (fallbackOverlay) {
+                fallbackOverlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+
             setTrackDetailsUI(track);
 
             const videoId = getYouTubeId(track.url);
@@ -929,7 +867,6 @@
                 return;
             }
 
-            // Append to play history
             const globalIndex = playlist.indexOf(track);
             if (playHistory.length === 0 || playHistory[historyIndex] !== globalIndex) {
                 if (historyIndex < playHistory.length - 1) {
@@ -949,7 +886,6 @@
             }
         }
 
-        // Playback Action Helpers
         function togglePlayPause() {
             if (!ytPlayer) return;
             try {
@@ -1083,32 +1019,26 @@
             }
         }
 
-        // Cleaned up, highly compatible YouTube ID extraction utility
         function getYouTubeId(url) {
             if (!url) return null;
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function filterCategory(categoryName) {
-            activeCategoryFilter = categoryName;
-            
-            document.querySelectorAll('.category-chip').forEach(btn => {
-                btn.className = "category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50";
-            });
-
-            const activeChip = Array.from(document.querySelectorAll('.category-chip')).find(b => {
-                const text = b.innerText.trim();
-                if (categoryName === 'All' && text === 'All') return true;
-                if (categoryName.startsWith(text)) return true;
-                return false;
-            });
-            if (activeChip) {
-                activeChip.className = "category-chip active flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 transition hover:bg-sky-500/30";
+            try {
+                let textStr = url.trim();
+                if (textStr.includes('youtu.be/')) {
+                    return textStr.split('youtu.be/')[1].split(/[?#]/)[0];
+                }
+                if (textStr.includes('v=')) {
+                    return textStr.split('v=')[1].split('&')[0].split('#')[0];
+                }
+                if (textStr.includes('embed/')) {
+                    return textStr.split('embed/')[1].split(/[?#]/)[0];
+                }
+                const regExp = /^.*(v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = textStr.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : null;
+            } catch (e) {
+                console.error("Error structural parsing for active URL lookup", e);
+                return null;
             }
-
-            applyFilterAndPreserve();
         }
 
         function filterPlaylist() {
@@ -1123,8 +1053,9 @@
             activeSearchFilter = '';
             document.getElementById('library-search').value = '';
             
+            renderCategoryFilters(); 
             filterCategory('All');
-            showToast("Playlist reset to default 50 classic tracks!");
+            showToast("Playlist reset to blank state!");
         }
 
         function handleFileImport(event) {
@@ -1230,6 +1161,7 @@
             
             closeImportDialog();
             registerCustomSeriesColors();
+            renderCategoryFilters(); // Build the new dynamic buttons
             filterCategory('All');
         }
 
@@ -1251,8 +1183,8 @@
 
         function downloadTemplate() {
             const templateCSV = "Series,Track Name,Game / Context,Vibe / Style,YouTube URL\n" +
-                                "Zelda,Hateno Village (Night),Breath of the Wild,Warm acoustic guitar,https://www.youtube.com/watch?v=y2IAdxs_fq4n" +
-                                "Kingdom Hearts,Dearly Beloved,Kingdom Hearts II,Iconic menu music,https://www.youtube.com/watch?v=4It2Prl5E-Qn" +
+                                "Zelda,Hateno Village (Night),Breath of the Wild,Warm acoustic guitar,https://www.youtube.com/watch?v=y2IAdxs_fq4\n" +
+                                "Kingdom Hearts,Dearly Beloved,Kingdom Hearts II,Iconic menu music,https://www.youtube.com/watch?v=4It2Prl5E-Q\n" +
                                 "Custom Study Music,Rainy Lofi Beats,Lofi Girl,Perfect focus background,https://www.youtube.com/watch?v=jfKfPfyJRdk";
             
             const blob = new Blob([templateCSV], { type: 'text/csv;charset=utf-8;' });
