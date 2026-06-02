@@ -163,8 +163,8 @@
                             <i data-lucide="alert-octagon" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-white text-base">YouTube Embed Blocked</h4>
-                            <p class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
+                            <h4 id="error-fallback-title" class="font-bold text-white text-base">YouTube Embed Blocked</h4>
+                            <p id="error-fallback-message" class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
                                 Nintendo/Square Enix block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
                             </p>
                         </div>
@@ -636,14 +636,26 @@
 
         function onPlayerError(event) {
             // YouTube Error Codes: 101 and 150 mean the video owner blocks embedded playback on this domain/protocol.
-            if (event.data === 101 || event.data === 150) {
+            if (event.data === 101 || event.data === 150 || event.data === 2 || event.data === 5) {
                 console.warn("YouTube Embed Playback Blocked. Displaying graceful fallback interface.");
                 const fallbackOverlay = document.getElementById('player-error-fallback');
+                const fallbackTitle = document.getElementById('error-fallback-title');
+                const fallbackMessage = document.getElementById('error-fallback-message');
                 const fallbackLink = document.getElementById('error-fallback-link');
                 const activeTrack = filteredTracks[currentTrackIndex];
 
                 if (fallbackOverlay && activeTrack) {
                     fallbackLink.href = activeTrack.url;
+                    
+                    // Customize error text dynamically based on the protocol
+                    if (window.location.protocol === 'file:') {
+                        fallbackTitle.innerText = "Local File Restricted";
+                        fallbackMessage.innerHTML = `Chrome blocks secure YouTube embeds when opened directly as a local file (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>). Use your GitHub Pages URL to bypass this restriction!`;
+                    } else {
+                        fallbackTitle.innerText = "Embedding Restricted by Publisher";
+                        fallbackMessage.innerHTML = `Nintendo or Square Enix occasionally blocks official tracks from external embedding. Click below to open directly, or skip to the next track!`;
+                    }
+                    
                     fallbackOverlay.classList.remove('opacity-0', 'pointer-events-none');
                 }
             } else {
