@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoreBeat - Video Game Music Shuffler</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (XLSX parsing) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PapaParse (CSV parsing) -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar design */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.4);
+        }
+        /* Pulsing neon ambient background */
+        .ambient-glow {
+            filter: blur(140px);
+            opacity: 0.45;
+            transition: background 1.2s ease-in-out, filter 1s;
+        }
+        /* Hide native range styling for modern music bar */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            height: 6px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -5px;
+            background-color: var(--slider-thumb-color, #38bdf8);
+            border-radius: 9999px;
+            height: 16px;
+            width: 16px;
+            box-shadow: 0 0 10px var(--slider-thumb-color, #38bdf8);
+            transition: transform 0.1s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            Zelda: '#10b981',      // Emerald
+                            KingdomHearts: '#6366f1', // Indigo
+                            OuterWilds: '#f59e0b', // Amber
+                            Xenoblade: '#06b6d4',  // Cyan
+                            Pokemon: '#f43f5e',    // Rose
+                            Custom: '#3b82f6'      // Blue
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-slate-100 min-h-screen relative flex flex-col selection:bg-sky-500/30 selection:text-sky-200">
+
+    <!-- Glowing Background Ambient Spheres -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div id="glow-1" class="absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full ambient-glow bg-emerald-950/40"></div>
+        <div id="glow-2" class="absolute -bottom-[20%] -right-[10%] w-[50vw] h-[50vw] rounded-full ambient-glow bg-slate-900/60"></div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="music" class="w-5 h-5 text-white animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        LoreBeat
+                    </h1>
+                    <p class="text-xs text-slate-400">Atmospheric Video Game Music Shuffler</p>
+                </div>
+            </div>
+
+            <!-- Global Upload & Help Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Local Host Helper Status Badge -->
+                <button onclick="toggleDiagnosticsModal()" id="local-status-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-400 transition hover:bg-amber-500/20">
+                    <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Local File Mode (Get Help)
+                </button>
+
+                <!-- Preset Controller -->
+                <button onclick="resetToDefaultPlaylist()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 bg-slate-900/40 text-xs text-slate-300 transition hover:bg-slate-900">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    Reset Playlist
+                </button>
+
+                <!-- Excel / CSV Upload Button -->
+                <label class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-lg shadow-sky-500/10 active:scale-95">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <span>Upload Playlist</span>
+                    <input type="file" id="file-uploader" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleFileImport(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Work Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 relative">
+        
+        <!-- Left Side: Interactive Video Player & Visualizer (7 Columns) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Current Track Showcase / Visualizer Card -->
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-lg shadow-2xl flex flex-col gap-5 relative overflow-hidden group">
+                <!-- Theme Accent Border Highlight -->
+                <div id="theme-border" class="absolute inset-x-0 top-0 h-[3px] bg-sky-500 transition-all duration-1000"></div>
+
+                <!-- YouTube Player Container -->
+                <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-800 group-hover:border-slate-700/80 transition shadow-inner">
+                    <div id="yt-player-container" class="w-full h-full absolute inset-0">
+                        <div id="youtube-iframe-placeholder"></div>
+                    </div>
+                    <!-- Minimalist Overlay when loading -->
+                    <div id="player-loading-shimmer" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-4 transition-opacity duration-300 pointer-events-none z-20">
+                        <div class="w-12 h-12 rounded-full border-4 border-slate-700 border-t-sky-500 animate-spin"></div>
+                        <p class="text-sm text-slate-400 font-medium">Readying your loop...</p>
+                    </div>
+                    <!-- Playback Error Fallback Interface Overlay -->
+                    <div id="player-error-fallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center gap-4 transition-opacity duration-300 opacity-0 pointer-events-none z-30">
+                        <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+                            <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-base">YouTube Embed Blocked</h4>
+                            <p class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
+                                Nintendo/Square Enix block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-2 pointer-events-auto">
+                            <a id="error-fallback-link" href="#" target="_blank" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                Open & Play on YouTube
+                            </a>
+                            <button onclick="playNext()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-300 transition">
+                                <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+                                Skip Track
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meta Information Block -->
+                <div class="flex items-start justify-between gap-4 mt-2">
+                    <div class="flex-1 min-w-0">
+                        <span id="player-series-tag" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 mb-2 transition-all duration-500">
+                            The Legend of Zelda
+                        </span>
+                        <h2 id="player-track-title" class="text-xl sm:text-2xl font-bold tracking-tight text-white truncate drop-shadow-sm">
+                            Hateno Village (Night)
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-sm text-slate-400 mt-1">
+                            <span id="player-game-title" class="flex items-center gap-1.5 font-medium text-slate-300">
+                                <i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-slate-400"></i>
+                                Breath of the Wild
+                            </span>
+                            <span class="text-slate-600 hidden sm:inline">•</span>
+                            <span id="player-vibe-text" class="italic flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-500"></i>
+                                Warm acoustic guitar, soft woodwinds
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- External Link to YouTube -->
+                    <a id="player-yt-link" href="#" target="_blank" class="p-3 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900/80 text-slate-400 hover:text-white transition active:scale-95" title="Open directly on YouTube">
+                        <i data-lucide="external-link" class="w-5 h-5"></i>
+                    </a>
+                </div>
+
+                <!-- Music Scrubber & Time Controls -->
+                <div class="mt-4">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5 font-mono">
+                        <span id="player-current-time">0:00</span>
+                        <span id="player-total-time">0:00</span>
+                    </div>
+                    <div class="relative group">
+                        <input type="range" id="track-scrubber" value="0" min="0" max="100" class="w-full" oninput="scrubVideo(this.value)">
+                    </div>
+                </div>
+
+                <!-- Master Audio Player Control HUD -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-6 mt-2 pt-2 border-t border-slate-900">
+                    
+                    <!-- Auxiliary Modes (Shuffle / Loop Modes) -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+                        <!-- Shuffle Mode Toggle -->
+                        <button id="btn-shuffle" onclick="toggleShuffle()" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900/30 transition text-slate-400 hover:text-white hover:bg-slate-900/60" title="Toggle Shuffle Mode">
+                            <i data-lucide="shuffle" class="w-4 h-4"></i>
+                        </button>
+                        <!-- Loop Mode Toggle -->
+                        <button id="btn-loop" onclick="toggleLoop()" class="p-2.5 rounded-lg border border-slate-800 bg-slate-900/30 transition text-slate-400 hover:text-white hover:bg-slate-900/60" title="Repeat Track">
+                            <i data-lucide="repeat" class="w-4 h-4"></i>
+                        </button>
+                        <!-- Auto Continuous Play -->
+                        <button id="btn-autoplay" onclick="toggleAutoPlay()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/30 text-xs font-medium text-slate-400 hover:text-white transition" title="Auto-advance to next song on complete">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            Auto-Next
+                        </button>
+                    </div>
+
+                    <!-- Main Playback Actions -->
+                    <div class="flex items-center gap-4">
+                        <!-- Previous Track -->
+                        <button onclick="playPrevious()" class="p-3 rounded-full border border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900 text-slate-300 hover:text-white transition active:scale-95" title="Previous Track">
+                            <i data-lucide="skip-back" class="w-5 h-5 fill-current"></i>
+                        </button>
+
+                        <!-- Main Play/Pause Button -->
+                        <button id="btn-master-play" onclick="togglePlayPause()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white hover:from-sky-400 hover:to-indigo-500 transition shadow-lg shadow-indigo-500/25 active:scale-95" title="Play / Pause">
+                            <i data-lucide="play" id="btn-master-play-icon" class="w-7 h-7 fill-current translate-x-0.5"></i>
+                        </button>
+
+                        <!-- Next / Skip Track (triggers random if shuffle is on) -->
+                        <button onclick="playNext()" class="p-3 rounded-full border border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900 text-slate-300 hover:text-white transition active:scale-95" title="Next Track">
+                            <i data-lucide="skip-forward" class="w-5 h-5 fill-current"></i>
+                        </button>
+                    </div>
+
+                    <!-- Volume Panel -->
+                    <div class="flex items-center gap-3 w-full sm:w-36 justify-center sm:justify-end">
+                        <button onclick="toggleMute()" class="text-slate-400 hover:text-white transition" id="btn-volume-icon">
+                            <i data-lucide="volume-2" class="w-4.5 h-4.5"></i>
+                        </button>
+                        <input type="range" id="volume-slider" min="0" max="100" value="70" class="w-24 sm:w-full accent-sky-500" oninput="adjustVolume(this.value)">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pro Tips / Ambient Controller Box -->
+            <div class="bg-slate-950/30 border border-slate-900/80 rounded-2xl p-5 flex flex-col gap-3">
+                <h3 class="font-semibold text-sm text-slate-300 flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
+                    Continuous Desktop Playing
+                </h3>
+                <p class="text-xs leading-relaxed text-slate-400">
+                    Running locally from your desktop means Chrome's security sandbox might ask you to click <span class="text-sky-400 font-bold">directly on the YouTube video panel first</span> to kick off playback permissions. Keep auto-next active for infinite, distraction-free studying!
+                </p>
+                <div class="flex flex-wrap gap-2 mt-1">
+                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">No Host Needed</span>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Interactive Loop</span>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Offline-Ready Core</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Library & Custom Track Manager (5 Columns) -->
+        <section class="lg:col-span-5 flex flex-col gap-6 h-full min-h-[500px] lg:min-h-0">
+            
+            <!-- Library panel card container -->
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-lg flex flex-col flex-grow max-h-[700px] lg:max-h-[780px]">
+                
+                <!-- Search & Filter Controls -->
+                <div class="flex flex-col gap-3 mb-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                            <i data-lucide="library" class="w-5 h-5 text-indigo-400"></i>
+                            Soundtrack Library
+                        </h3>
+                        <span id="track-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
+                            50 Tracks
+                        </span>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="library-search" oninput="filterPlaylist()" placeholder="Search track, game, or notes..." class="w-full bg-slate-900 border border-slate-800 hover:border-slate-700/80 focus:border-sky-500/80 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-100 placeholder-slate-500 transition focus:outline-none focus:ring-1 focus:ring-sky-500/20">
+                    </div>
+
+                    <!-- Series Quick Filter Chips (Horizontal Scrolling Container) -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin" id="series-filters">
+                        <button onclick="filterCategory('All')" class="category-chip active flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 transition hover:bg-sky-500/30">
+                            All
+                        </button>
+                        <button onclick="filterCategory('The Legend of Zelda')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
+                            Zelda
+                        </button>
+                        <button onclick="filterCategory('Kingdom Hearts')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
+                            Kingdom Hearts
+                        </button>
+                        <button onclick="filterCategory('Outer Wilds')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
+                            Outer Wilds
+                        </button>
+                        <button onclick="filterCategory('Xenoblade Chronicles')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
+                            Xenoblade
+                        </button>
+                        <button onclick="filterCategory('Pokémon')" class="category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50">
+                            Pokémon
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Playlist Table/List Zone -->
+                <div class="flex-grow overflow-y-auto pr-1 border border-slate-900 rounded-xl bg-slate-950/40 p-1" id="playlist-list">
+                    <!-- Dynamic playlist list rows are rendered here -->
+                </div>
+
+                <!-- Quick CSV Template Download helper -->
+                <div class="mt-4 pt-3 border-t border-slate-900 flex justify-between items-center text-xs text-slate-500">
+                    <span>Formats supported: .xlsx, .xls, .csv</span>
+                    <button onclick="downloadTemplate()" class="text-sky-400 hover:underline flex items-center gap-1">
+                        <i data-lucide="download" class="w-3 h-3"></i> Download Template File
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal/Dialogue for Playlist Overwrite Decision -->
+    <div id="upload-dialog" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
+                <i data-lucide="file-spreadsheet" class="text-sky-400 w-5 h-5"></i>
+                Import Playlist Detected
+            </h4>
+            <p class="text-sm text-slate-400 mb-6 leading-relaxed">
+                We successfully detected <span id="dialog-import-count" class="text-sky-400 font-bold">0</span> new tracks from your file. How would you like to load them?
+            </p>
+            <div class="flex flex-col gap-2.5">
+                <button onclick="confirmImport('append')" class="w-full py-2.5 px-4 rounded-xl font-medium bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 text-slate-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="folder-plus" class="w-4 h-4 text-emerald-400"></i>
+                    Append to Existing Library
+                </button>
+                <button onclick="confirmImport('overwrite')" class="w-full py-2.5 px-4 rounded-xl font-medium bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
+                    Overwrite (Only play Imported tracks)
+                </button>
+                <button onclick="closeImportDialog()" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-300 transition mt-2">
+                    Cancel Import
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic & Local Playback Help Modal -->
+    <div id="diagnostics-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="toggleDiagnosticsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h4 class="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                <i data-lucide="server" class="text-amber-400 w-5 h-5 animate-bounce"></i>
+                Bypassing Browser "file://" Restrictions
+            </h4>
+            <div class="text-xs text-slate-300 space-y-4 leading-relaxed">
+                <p>
+                    Because you opened this HTML directly from your desktop, Google Chrome is blockaded from talking securely with YouTube. This causes official tracks to trigger configuration or embed blocks.
+                </p>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-3">
+                    <p class="font-bold text-amber-400 flex items-center gap-1">
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                        Solution 1: Use the Instant Python Launcher (Recommended)
+                    </p>
+                    <ol class="list-decimal pl-4 space-y-1.5 text-slate-400">
+                        <li>Save the companion script <code class="text-sky-400 bg-slate-950 px-1 py-0.5 rounded font-mono">serve.py</code> in the same folder as this webpage.</li>
+                        <li>Double-click <code class="text-sky-400 bg-slate-950 px-1 py-0.5 rounded font-mono">serve.py</code> (or open your terminal and run <code class="bg-slate-950 px-1 py-0.5 rounded text-emerald-400 font-mono">python serve.py</code>).</li>
+                        <li>It will safely host the site at <span class="text-white underline">http://localhost:8000</span>. Everything will play perfectly!</li>
+                    </ol>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-900 rounded-xl p-4 space-y-2">
+                    <p class="font-bold text-slate-200">Solution 2: Chrome Extension Web Server</p>
+                    <p class="text-slate-400">
+                        Alternatively, you can install the free Chrome Web Store extension <strong class="text-white">"Web Server for Chrome"</strong>. Simply select your folder and launch the web server.
+                    </p>
+                </div>
+            </div>
+            <button onclick="toggleDiagnosticsModal()" class="w-full mt-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-xs font-bold text-slate-300 transition border border-slate-800">
+                Got it, let's play!
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert / Toast HUD -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-950 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2.5 transition-all duration-300 transform translate-y-20 opacity-0">
+        <div id="toast-icon-bg" class="p-1 rounded bg-sky-500/10 text-sky-400">
+            <i data-lucide="info" class="w-4 h-4" id="toast-icon"></i>
+        </div>
+        <span id="toast-message" class="text-xs font-medium text-slate-300">Playlist imported successfully!</span>
+    </div>
+
+    <!-- Footer Meta -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-4 text-center text-xs text-slate-500 mt-auto z-10">
+        <p>© 2026 LoreBeat. Music content belongs directly to Nintendo, Square Enix, Mobius Digital, and Monolith Soft.</p>
+    </footer>
+
+    <!-- JavaScript logic -->
+    <script>
+        const PRESET_TRACKS = [
+            // Zelda
+            {series: "The Legend of Zelda", trackName: "Hateno Village (Night)", game: "Breath of the Wild", vibe: "Warm acoustic guitar, soft woodwinds", url: "https://www.youtube.com/watch?v=y2IAdxs_fq4"},
+            {series: "The Legend of Zelda", trackName: "Rito Village (Night)", game: "Breath of the Wild", vibe: "Soothing, piano-centric arrangement of Wind Waker theme", url: "https://www.youtube.com/watch?v=54V2zN6L7p0"},
+            {series: "The Legend of Zelda", trackName: "Kakariko Village", game: "Ocarina of Time", vibe: "Timeless, nostalgic nylon-string guitar folk song", url: "https://www.youtube.com/watch?v=v8V4FpD_VvU"},
+            {series: "The Legend of Zelda", trackName: "Lurelin Village (Night)", game: "Tears of the Kingdom", vibe: "Gentle, seaside acoustic track", url: "https://www.youtube.com/watch?v=UqM8NAsL_mY"},
+            {series: "The Legend of Zelda", trackName: "Tarrey Town (Night)", game: "Breath of the Wild", vibe: "Quiet, growing melody with light strings and woodwinds", url: "https://www.youtube.com/watch?v=7O0rG9D6Aao"},
+            {series: "The Legend of Zelda", trackName: "Zelda's Lullaby", game: "Skyward Sword / Various", vibe: "The ultimate calming orchestral theme", url: "https://www.youtube.com/watch?v=E_Dq89G9U6s"},
+            {series: "The Legend of Zelda", trackName: "Grandma's Theme", game: "The Wind Waker", vibe: "Deeply emotional, soft acoustic and string track", url: "https://www.youtube.com/watch?v=G6P8IskH5sA"},
+            {series: "The Legend of Zelda", trackName: "Ordon Village", game: "Twilight Princess", vibe: "Pastoral, rustic melody with acoustic guitar and pan flutes", url: "https://www.youtube.com/watch?v=84wY3U68Zos"},
+            {series: "The Legend of Zelda", trackName: "Stable Theme", game: "Breath of the Wild", vibe: "Lazy, rolling acoustic piece with soft guitar and bass", url: "https://www.youtube.com/watch?v=8mG_70A2P4w"},
+            {series: "The Legend of Zelda", trackName: "Fi's Farewell", game: "Skyward Sword", vibe: "Gentle, melancholy piano and string composition", url: "https://www.youtube.com/watch?v=K3t_XbY34_Y"},
+
+            // Kingdom Hearts
+            {series: "Kingdom Hearts", trackName: "Dearly Beloved", game: "Kingdom Hearts II", vibe: "Iconic menu music, rolling piano octaves", url: "https://www.youtube.com/watch?v=4It2Prl5E-Q"},
+            {series: "Kingdom Hearts", trackName: "Lazy Afternoons", game: "Kingdom Hearts II", vibe: "Twilight Town theme; jazzy, warm acoustic guitar", url: "https://www.youtube.com/watch?v=Zf8796VIs8E"},
+            {series: "Kingdom Hearts", trackName: "Traverse Town", game: "Kingdom Hearts", vibe: "Calm, steady nighttime jazz with saxophone and piano", url: "https://www.youtube.com/watch?v=wz36S9Ibe6k"},
+            {series: "Kingdom Hearts", trackName: "Friends in My Heart", game: "Kingdom Hearts", vibe: "Minimalist, tender piano piece", url: "https://www.youtube.com/watch?v=oU4tIq7R4H8"},
+            {series: "Kingdom Hearts", trackName: "Missing You", game: "Kingdom Hearts II", vibe: "Delicate piano track capturing quiet, reflective solitude", url: "https://www.youtube.com/watch?v=R9_mGqYt3v4"},
+            {series: "Kingdom Hearts", trackName: "Kairi", game: "Kingdom Hearts", vibe: "Light, breezy, uplifting acoustic and flute melody", url: "https://www.youtube.com/watch?v=I7X8T62S7bI"},
+            {series: "Kingdom Hearts", trackName: "Roxas", game: "Kingdom Hearts II", vibe: "Beautiful, melancholic solo oboe and gentle strings", url: "https://www.youtube.com/watch?v=CqYfUu-V9a0"},
+            {series: "Kingdom Hearts", trackName: "Xion's Theme (Piano)", game: "358/2 Days", vibe: "Poignant, stripped-back piano arrangement", url: "https://www.youtube.com/watch?v=h0H6e8-2wO8"},
+            {series: "Kingdom Hearts", trackName: "The Afternoon Streets", game: "Kingdom Hearts II", vibe: "Slightly brighter but relaxed acoustic urban stroll theme", url: "https://www.youtube.com/watch?v=E-9S6bXpUFs"},
+            {series: "Kingdom Hearts", trackName: "A Piece of Peace", game: "Kingdom Hearts", vibe: "Ethereal, ambient music from Station of Awakening", url: "https://www.youtube.com/watch?v=A_W0lY_zscM"},
+
+            // Outer Wilds
+            {series: "Outer Wilds", trackName: "Timber Hearth", game: "Original Soundtrack", vibe: "Iconic, cozy banjo and acoustic guitar front-porch folk", url: "https://www.youtube.com/watch?v=5WWlG_rd5kk"},
+            {series: "Outer Wilds", trackName: "Space", game: "Original Soundtrack", vibe: "Deeply minimalist ambient synth pads with sparse guitar swells", url: "https://www.youtube.com/watch?v=vVjS7lQscqQ"},
+            {series: "Outer Wilds", trackName: "The Museum", game: "Original Soundtrack", vibe: "Gentle, curious track led by acoustic plucking and soft flute", url: "https://www.youtube.com/watch?v=F_f9zO-IeN0"},
+            {series: "Outer Wilds", trackName: "Travelers", game: "Original Soundtrack", vibe: "The heart of the game; all astronauts blending instruments", url: "https://www.youtube.com/watch?v=Vl6o0j7Xk1I"},
+            {series: "Outer Wilds", trackName: "Campfire Song", game: "Original Soundtrack", vibe: "Stripped-down, warm acoustic guitar loop", url: "https://www.youtube.com/watch?v=b4w5O98uAoo"},
+            {series: "Outer Wilds", trackName: "The Nomai", game: "Original Soundtrack", vibe: "Peaceful, cascading piano evoking ancient mystery", url: "https://www.youtube.com/watch?v=1F2b_HOn2M8"},
+            {series: "Outer Wilds", trackName: "Echoes of the Eye", game: "DLC Soundtrack", vibe: "Quiet, hauntingly beautiful acoustic guitar piece", url: "https://www.youtube.com/watch?v=pDIna_Wv9K0"},
+            {series: "Outer Wilds", trackName: "The River", game: "DLC Soundtrack", vibe: "Steady, flowing track with warm acoustic melody and liquid textures", url: "https://www.youtube.com/watch?v=C6E_6_065v4"},
+            {series: "Outer Wilds", trackName: "Postpartum", game: "Radio Signals", vibe: "Ambient, deeply soothing guitar performance", url: "https://www.youtube.com/watch?v=3S5eJ7q184k"},
+            {series: "Outer Wilds", trackName: "14.3 Billion Years", game: "Original Soundtrack", vibe: "Slow, atmospheric evolution resolving into a quiet finish", url: "https://www.youtube.com/watch?v=Jk9n5n7Z-mU"},
+
+            // Xenoblade
+            {series: "Xenoblade Chronicles", trackName: "Satorl Marsh (Night)", game: "Xenoblade Chronicles 1", vibe: "Ethereal vocal harmonies, soft bassline, gorgeous piano", url: "https://www.youtube.com/watch?v=e3h8JB_0UX4"},
+            {series: "Xenoblade Chronicles", trackName: "Colony 9 (Night)", game: "Xenoblade Chronicles 1", vibe: "Jazzy, late-night piano variation of the opening town theme", url: "https://www.youtube.com/watch?v=0hW6O6IqAks"},
+            {series: "Xenoblade Chronicles", trackName: "Fonsa Myma (Night)", game: "Xenoblade Chronicles 2", vibe: "Profoundly stunning, classical piano mimicking falling rain", url: "https://www.youtube.com/watch?v=Nn1Uor3I0kM"},
+            {series: "Xenoblade Chronicles", trackName: "Uraya (Night)", game: "Xenoblade Chronicles 2", vibe: "Mystical woodwinds and sweeping, gentle orchestration", url: "https://www.youtube.com/watch?v=j3N74p6fWRE"},
+            {series: "Xenoblade Chronicles", trackName: "Gaur Plain (Night)", game: "Xenoblade Chronicles 1", vibe: "Relaxed, acoustic guitar-driven take on legendary field theme", url: "https://www.youtube.com/watch?v=B1bC7B5Z6M4"},
+            {series: "Xenoblade Chronicles", trackName: "Tantal (Night)", game: "Xenoblade Chronicles 2", vibe: "Quiet, snowy, and peaceful piano-and-string track", url: "https://www.youtube.com/watch?v=89KAtZas-Z0"},
+            {series: "Xenoblade Chronicles", trackName: "Eryth Sea (Night)", game: "Xenoblade Chronicles 1", vibe: "Smooth synth pads and sparkling keys mimicking a cosmic sea", url: "https://www.youtube.com/watch?v=LqN648wWIDo"},
+            {series: "Xenoblade Chronicles", trackName: "Leftherian Archipelago (Night)", game: "Xenoblade Chronicles 2", vibe: "Comforting acoustic guitar track that feels like a quiet island", url: "https://www.youtube.com/watch?v=xV3fPofN89M"},
+            {series: "Xenoblade Chronicles", trackName: "Yickham Wilderness (Night)", game: "Xenoblade Chronicles 3", vibe: "Subdued overworld piece with soft acoustic instrumentation", url: "https://www.youtube.com/watch?v=DndP8XFhT0g"},
+            {series: "Xenoblade Chronicles", trackName: "The City (Night)", game: "Xenoblade Chronicles 3", vibe: "Calm, urban jazz piece highlighting a tender solo piano", url: "https://www.youtube.com/watch?v=6hX_K7t3l8k"},
+
+            // Pokemon
+            {series: "Pokémon", trackName: "National Park", game: "Gold / Silver / HGSS", vibe: "Rolling, joyful piano solo; the ultimate calm Pokémon song", url: "https://www.youtube.com/watch?v=Drcp-Gv43O4"},
+            {series: "Pokémon", trackName: "Route 201 (Night)", game: "Diamond / Pearl / Platinum", vibe: "Soft, syncopated jazz piano piece that melts away stress", url: "https://www.youtube.com/watch?v=F38P4t4I4H4"},
+            {series: "Pokémon", trackName: "Ecruteak City / Cianwood City", game: "HeartGold / SoulSilver", vibe: "Beautifully traditional, Japanese-inspired acoustic track", url: "https://www.youtube.com/watch?v=Z6M6U46LgW4"},
+            {series: "Pokémon", trackName: "Undella Town (Non-Summer)", game: "Black / White", vibe: "Serene, relaxing coastal town theme", url: "https://www.youtube.com/watch?v=Cq_ZqR1X0f0"},
+            {series: "Pokémon", trackName: "Canalave City (Night)", game: "Diamond / Pearl / Platinum", vibe: "Gorgeous, melancholic piano-and-strings piece with harbor vibe", url: "https://www.youtube.com/watch?v=pGq5r_h66nU"},
+            {series: "Pokémon", trackName: "Anistar City", game: "X / Y", vibe: "Cosmic, mysterious, yet deeply chilled-out ambient track", url: "https://www.youtube.com/watch?v=UqQcT_Lpx2A"},
+            {series: "Pokémon", trackName: "Littleroot Town", game: "Ruby / Sapphire / ORAS", vibe: "Simple, warm hometown theme with soft acoustic guitar and flute", url: "https://www.youtube.com/watch?v=sOn8wS1lMoc"},
+            {series: "Pokémon", trackName: "Accumula Town", game: "Black / White", vibe: "Relaxed version featuring classic piano and acoustic guitar layers", url: "https://www.youtube.com/watch?v=3nI03E-D0wI"},
+            {series: "Pokémon", trackName: "Pallet Town", game: "Red / Blue / FRLG", vibe: "Pure nostalgia; an incredibly simple, slow acoustic melody", url: "https://www.youtube.com/watch?v=Vl8bF2tSlyg"},
+            {series: "Pokémon", trackName: "Route 209 (Night)", game: "Diamond / Pearl / Platinum", vibe: "Wonderfully mellowed-out version of Sinnoh's famous route", url: "https://www.youtube.com/watch?v=R7gMstfOaHk"}
+        ];
+
+        let playlist = [...PRESET_TRACKS];
+        let filteredTracks = [...PRESET_TRACKS];
+        let currentTrackIndex = 0;
+        let playHistory = [];
+        let historyIndex = -1;
+
+        let isShuffling = true;
+        let isLooping = false;
+        let isAutoPlayNext = true;
+        let activeCategoryFilter = 'All';
+        let activeSearchFilter = '';
+
+        let ytPlayer = null;
+        let progressInterval = null;
+        let isMuted = false;
+        let lastVolume = 70;
+        let isPlayerReady = false;
+
+        // Custom imported tracks ready for confirm modal
+        let stagedTracks = [];
+
+        // Global colors map based on category
+        const SERIES_COLORS = {
+            'The Legend of Zelda': { color: '#10b981', glowBg: 'bg-emerald-950/45', tagClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+            'Kingdom Hearts': { color: '#6366f1', glowBg: 'bg-indigo-950/45', tagClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+            'Outer Wilds': { color: '#f59e0b', glowBg: 'bg-amber-950/45', tagClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+            'Xenoblade Chronicles': { color: '#06b6d4', glowBg: 'bg-cyan-950/45', tagClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+            'Pokémon': { color: '#f43f5e', glowBg: 'bg-rose-950/45', tagClass: 'bg-rose-500/10 text-rose-400 border-rose-500/20' },
+            'Custom': { color: '#3b82f6', glowBg: 'bg-slate-900/45', tagClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20' }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load YouTube Iframe API asynchronously
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            lucide.createIcons();
+            
+            // Check if page is hosted locally on file system
+            const isLocalFile = window.location.protocol === 'file:';
+            const statusBadge = document.getElementById('local-status-badge');
+            if (isLocalFile) {
+                statusBadge.classList.remove('hidden');
+            } else {
+                statusBadge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-400 transition hover:bg-emerald-500/20";
+                statusBadge.innerHTML = `<span class="h-2 w-2 rounded-full bg-emerald-500"></span> Server Mode Active`;
+            }
+
+            // Build current track views
+            updateLibraryDOM();
+            updateControlsUI();
+            setTrackDetailsUI(filteredTracks[currentTrackIndex]);
+        });
+
+        function onYouTubeIframeAPIReady() {
+            const firstVideoUrl = filteredTracks[currentTrackIndex].url;
+            const initialVideoId = getYouTubeId(firstVideoUrl) || "y2IAdxs_fq4";
+
+            // Determine if protocol allows origin parameters (strictly exclude on local file schemes)
+            let isHttp = window.location.protocol.startsWith('http');
+            let originUrl = isHttp ? window.location.origin : undefined;
+
+            ytPlayer = new YT.Player('youtube-iframe-placeholder', {
+                height: '100%',
+                width: '100%',
+                videoId: initialVideoId,
+                playerVars: {
+                    playsinline: 1,
+                    controls: 1, // Fallback controls are necessary for desktop file access
+                    showinfo: 0,
+                    rel: 0,
+                    modestbranding: 1,
+                    ...(originUrl ? { origin: originUrl } : {})
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+
+            // Fallback Timer to dismiss the loading shroud if local browser protocols block standard YouTube ready hooks
+            setTimeout(() => {
+                if (!isPlayerReady) {
+                    console.log("YouTube Player API Ready event timed out. Fading out loading shroud as a safe default.");
+                    const shimmer = document.getElementById('player-loading-shimmer');
+                    if (shimmer) {
+                        shimmer.classList.add('opacity-0');
+                        shimmer.style.pointerEvents = 'none';
+                    }
+                    showToast("Running locally! Click directly on the YouTube video panel if autoplay is restricted.", "info");
+                }
+            }, 3000);
+        }
+
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            // Hide loading overlay
+            const shimmer = document.getElementById('player-loading-shimmer');
+            if (shimmer) {
+                shimmer.classList.add('opacity-0');
+                shimmer.style.pointerEvents = 'none';
+            }
+            ytPlayer.setVolume(lastVolume);
+            updateTrackDuration();
+            startProgressTracker();
+        }
+
+        function onPlayerStateChange(event) {
+            const icon = document.getElementById('btn-master-play-icon');
+            
+            if (event.data === YT.PlayerState.PLAYING) {
+                icon.setAttribute('data-lucide', 'pause');
+                lucide.createIcons();
+                const shimmer = document.getElementById('player-loading-shimmer');
+                if (shimmer) {
+                    shimmer.classList.add('opacity-0');
+                }
+                // Hide fallback overlay if active
+                document.getElementById('player-error-fallback').classList.add('opacity-0');
+                document.getElementById('player-error-fallback').classList.add('pointer-events-none');
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.CUED) {
+                icon.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            } else if (event.data === YT.PlayerState.ENDED) {
+                if (isLooping) {
+                    ytPlayer.playVideo();
+                } else if (isAutoPlayNext) {
+                    playNext();
+                }
+            } else if (event.data === YT.PlayerState.BUFFERING) {
+                const shimmer = document.getElementById('player-loading-shimmer');
+                if (shimmer) {
+                    shimmer.classList.remove('opacity-0');
+                }
+            }
+        }
+
+        function onPlayerError(event) {
+            // YouTube Error Codes: 101 and 150 mean the video owner blocks embedded playback on this domain/protocol.
+            if (event.data === 101 || event.data === 150) {
+                console.warn("YouTube Embed Playback Blocked. Displaying graceful fallback interface.");
+                const fallbackOverlay = document.getElementById('player-error-fallback');
+                const fallbackLink = document.getElementById('error-fallback-link');
+                const activeTrack = filteredTracks[currentTrackIndex];
+
+                if (fallbackOverlay && activeTrack) {
+                    fallbackLink.href = activeTrack.url;
+                    fallbackOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                }
+            } else {
+                showToast("Playback restricted inside file-systems. Click directly on video.", "info");
+            }
+            const shimmer = document.getElementById('player-loading-shimmer');
+            if (shimmer) {
+                shimmer.classList.add('opacity-0');
+            }
+        }
+
+        function toggleDiagnosticsModal() {
+            const modal = document.getElementById('diagnostics-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Start/Stop interval updating scrubber
+        function startProgressTracker() {
+            if (progressInterval) clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
+                    const current = ytPlayer.getCurrentTime();
+                    const duration = ytPlayer.getDuration();
+                    if (duration > 0) {
+                        const percent = (current / duration) * 100;
+                        document.getElementById('track-scrubber').value = percent;
+                        document.getElementById('player-current-time').innerText = formatTime(current);
+                        document.getElementById('player-total-time').innerText = formatTime(duration);
+                    }
+                }
+            }, 500);
+        }
+
+        // Action: Scrub through video track timeline
+        function scrubVideo(percentValue) {
+            if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
+                const duration = ytPlayer.getDuration();
+                const targetTime = (percentValue / 100) * duration;
+                ytPlayer.seekTo(targetTime, true);
+            }
+        }
+
+        // Dynamic visual update matching video properties
+        function setTrackDetailsUI(track) {
+            if (!track) return;
+
+            document.getElementById('player-track-title').innerText = track.trackName;
+            document.getElementById('player-game-title').innerHTML = `<i data-lucide="gamepad-2" class="w-3.5 h-3.5 text-slate-400"></i> ${track.game}`;
+            document.getElementById('player-vibe-text').innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-500"></i> ${track.vibe || 'Chill ambient session theme'}`;
+            document.getElementById('player-yt-link').href = track.url;
+
+            // Apply dynamic visual design scheme
+            const styleProps = SERIES_COLORS[track.series] || SERIES_COLORS['Custom'];
+            
+            // Adjust glowing backdrop gradients
+            const glow1 = document.getElementById('glow-1');
+            glow1.className = `absolute -top-[20%] -left-[10%] w-[60vw] h-[60vw] rounded-full ambient-glow ${styleProps.glowBg}`;
+            
+            // Adjust series top accent & badge style
+            const badge = document.getElementById('player-series-tag');
+            badge.innerText = track.series;
+            badge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2 transition-all duration-500 ${styleProps.tagClass}`;
+
+            // Set accent top bar of card
+            document.getElementById('theme-border').style.backgroundColor = styleProps.color;
+            
+            // Custom CSS variable injection for the custom track timeline slider colors
+            document.documentElement.style.setProperty('--slider-thumb-color', styleProps.color);
+
+            lucide.createIcons();
+            
+            // Select active track visually in list view
+            document.querySelectorAll('.playlist-row').forEach(row => {
+                row.classList.remove('bg-slate-900/60', 'border-sky-500/20', 'text-white');
+                row.classList.add('border-transparent');
+            });
+            const selectedRow = document.getElementById(`track-row-${playlist.indexOf(track)}`);
+            if (selectedRow) {
+                selectedRow.classList.add('bg-slate-900/60', 'border-sky-500/20', 'text-white');
+                selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Format raw float time to readable M:SS structure
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === undefined) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Check if track matches active category and search filter
+        function matchesFilters(track) {
+            const matchesCategory = (activeCategoryFilter === 'All' || track.series === activeCategoryFilter);
+            
+            const searchLower = activeSearchFilter.toLowerCase();
+            const matchesSearch = !activeSearchFilter || 
+                track.trackName.toLowerCase().includes(searchLower) || 
+                track.game.toLowerCase().includes(searchLower) || 
+                track.vibe.toLowerCase().includes(searchLower);
+
+            return matchesCategory && matchesSearch;
+        }
+
+        // Render entire playlist rows
+        function updateLibraryDOM() {
+            const listContainer = document.getElementById('playlist-list');
+            listContainer.innerHTML = '';
+
+            let counter = 0;
+            playlist.forEach((track, originalIndex) => {
+                if (!matchesFilters(track)) return;
+                counter++;
+
+                const styleProps = SERIES_COLORS[track.series] || SERIES_COLORS['Custom'];
+                const isCurrent = (originalIndex === playlist.indexOf(filteredTracks[currentTrackIndex]));
+                const activeClasses = isCurrent ? 'bg-slate-900/60 border-sky-500/20 text-white' : 'border-transparent text-slate-300';
+
+                const row = document.createElement('div');
+                row.id = `track-row-${originalIndex}`;
+                row.className = `playlist-row p-3 rounded-xl border flex items-center justify-between gap-4 cursor-pointer hover:bg-slate-900/40 hover:border-slate-800 transition ${activeClasses}`;
+                row.onclick = () => playSelectedTrackByIndex(originalIndex);
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-bold flex-shrink-0" style="background-color: ${styleProps.color}15; color: ${styleProps.color}">
+                            ${isCurrent ? '<i data-lucide="play" class="w-3.5 h-3.5 fill-current animate-pulse"></i>' : counter}
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-semibold truncate ${isCurrent ? 'text-white' : 'text-slate-200'}">${track.trackName}</h4>
+                            <p class="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                                <span class="font-medium text-slate-300">${track.game}</span> • ${track.vibe || 'Ambient'}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded flex-shrink-0" style="background-color: ${styleProps.color}15; color: ${styleProps.color}">
+                        ${track.series.split(' ')[0]}
+                    </span>
+                `;
+                listContainer.appendChild(row);
+            });
+
+            document.getElementById('track-count-badge').innerText = `${counter} Tracks`;
+            lucide.createIcons();
+        }
+
+        // Track Select & Direct Execution
+        function playSelectedTrackByIndex(globalIndex) {
+            const track = playlist[globalIndex];
+            if (!filteredTracks.includes(track)) {
+                activeCategoryFilter = 'All';
+                document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active', 'bg-sky-500/20', 'text-sky-400'));
+                document.querySelectorAll('.category-chip')[0].classList.add('active', 'bg-sky-500/20', 'text-sky-400');
+                applyFilterAndPreserve(track);
+            } else {
+                currentTrackIndex = filteredTracks.indexOf(track);
+                loadAndPlay(track);
+            }
+        }
+
+        function applyFilterAndPreserve(targetTrackToPlay) {
+            filteredTracks = playlist.filter(track => matchesFilters(track));
+            if (targetTrackToPlay) {
+                currentTrackIndex = filteredTracks.indexOf(targetTrackToPlay);
+                if (currentTrackIndex === -1) {
+                    filteredTracks.push(targetTrackToPlay);
+                    currentTrackIndex = filteredTracks.length - 1;
+                }
+            } else {
+                currentTrackIndex = 0;
+            }
+            updateLibraryDOM();
+            if (filteredTracks.length > 0) {
+                loadAndPlay(filteredTracks[currentTrackIndex]);
+            }
+        }
+
+        // Core Player loading & playback executor
+        function loadAndPlay(track) {
+            if (!track) return;
+            setTrackDetailsUI(track);
+
+            const videoId = getYouTubeId(track.url);
+            if (!videoId) {
+                showToast("Could not extract a valid YouTube video ID.", "error");
+                return;
+            }
+
+            // Append to play history
+            const globalIndex = playlist.indexOf(track);
+            if (playHistory.length === 0 || playHistory[historyIndex] !== globalIndex) {
+                if (historyIndex < playHistory.length - 1) {
+                    playHistory = playHistory.slice(0, historyIndex + 1);
+                }
+                playHistory.push(globalIndex);
+                historyIndex = playHistory.length - 1;
+            }
+
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                const shimmer = document.getElementById('player-loading-shimmer');
+                if (shimmer && !shimmer.classList.contains('opacity-0') && isPlayerReady) {
+                    shimmer.classList.remove('opacity-0');
+                }
+                ytPlayer.loadVideoById(videoId);
+                ytPlayer.playVideo();
+            }
+        }
+
+        // Playback Action Helpers
+        function togglePlayPause() {
+            if (!ytPlayer) return;
+            try {
+                const playerState = ytPlayer.getPlayerState();
+                if (playerState === YT.PlayerState.PLAYING) {
+                    ytPlayer.pauseVideo();
+                } else {
+                    ytPlayer.playVideo();
+                }
+            } catch (e) {
+                showToast("Click the video screen directly to control play state.", "info");
+            }
+        }
+
+        function playNext() {
+            if (filteredTracks.length === 0) return;
+
+            if (isShuffling) {
+                if (filteredTracks.length > 1) {
+                    let nextIndex = currentTrackIndex;
+                    while (nextIndex === currentTrackIndex) {
+                        nextIndex = Math.floor(Math.random() * filteredTracks.length);
+                    }
+                    currentTrackIndex = nextIndex;
+                } else {
+                    currentTrackIndex = 0;
+                }
+            } else {
+                currentTrackIndex = (currentTrackIndex + 1) % filteredTracks.length;
+            }
+
+            loadAndPlay(filteredTracks[currentTrackIndex]);
+        }
+
+        function playPrevious() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                const prevGlobalIndex = playHistory[historyIndex];
+                const track = playlist[prevGlobalIndex];
+                
+                if (filteredTracks.includes(track)) {
+                    currentTrackIndex = filteredTracks.indexOf(track);
+                }
+                loadAndPlay(track);
+            } else {
+                if (filteredTracks.length === 0) return;
+                currentTrackIndex = (currentTrackIndex - 1 + filteredTracks.length) % filteredTracks.length;
+                loadAndPlay(filteredTracks[currentTrackIndex]);
+            }
+        }
+
+        function toggleShuffle() {
+            isShuffling = !isShuffling;
+            updateControlsUI();
+            showToast(isShuffling ? "Shuffle playback enabled!" : "Sequential playback enabled!");
+        }
+
+        function toggleLoop() {
+            isLooping = !isLooping;
+            updateControlsUI();
+            showToast(isLooping ? "Track loop enabled!" : "Track loop disabled!");
+        }
+
+        function toggleAutoPlay() {
+            isAutoPlayNext = !isAutoPlayNext;
+            updateControlsUI();
+            showToast(isAutoPlayNext ? "Auto-advance enabled!" : "Auto-advance disabled!");
+        }
+
+        function toggleMute() {
+            if (!ytPlayer) return;
+            isMuted = !isMuted;
+            const volIcon = document.getElementById('btn-volume-icon');
+            
+            if (isMuted) {
+                ytPlayer.mute();
+                volIcon.innerHTML = `<i data-lucide="volume-x" class="w-4.5 h-4.5"></i>`;
+                document.getElementById('volume-slider').value = 0;
+            } else {
+                ytPlayer.unmute();
+                volIcon.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+                document.getElementById('volume-slider').value = lastVolume;
+                ytPlayer.setVolume(lastVolume);
+            }
+            lucide.createIcons();
+        }
+
+        function adjustVolume(volValue) {
+            if (!ytPlayer) return;
+            lastVolume = volValue;
+            ytPlayer.setVolume(volValue);
+            
+            const volIcon = document.getElementById('btn-volume-icon');
+            if (volValue == 0) {
+                volIcon.innerHTML = `<i data-lucide="volume-x" class="w-4.5 h-4.5"></i>`;
+            } else if (volValue < 40) {
+                volIcon.innerHTML = `<i data-lucide="volume-1" class="w-4.5 h-4.5"></i>`;
+            } else {
+                volIcon.innerHTML = `<i data-lucide="volume-2" class="w-4.5 h-4.5"></i>`;
+            }
+            lucide.createIcons();
+        }
+
+        function updateControlsUI() {
+            const shufBtn = document.getElementById('btn-shuffle');
+            if (isShuffling) {
+                shufBtn.classList.add('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            } else {
+                shufBtn.classList.remove('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            }
+
+            const loopBtn = document.getElementById('btn-loop');
+            if (isLooping) {
+                loopBtn.classList.add('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            } else {
+                loopBtn.classList.remove('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            }
+
+            const autoBtn = document.getElementById('btn-autoplay');
+            if (isAutoPlayNext) {
+                autoBtn.classList.add('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            } else {
+                autoBtn.classList.remove('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+            }
+        }
+
+        function updateTrackDuration() {
+            if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
+                const total = ytPlayer.getDuration();
+                document.getElementById('player-total-time').innerText = formatTime(total);
+            }
+        }
+
+        // Cleaned up, highly compatible YouTube ID extraction utility
+        function getYouTubeId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function filterCategory(categoryName) {
+            activeCategoryFilter = categoryName;
+            
+            document.querySelectorAll('.category-chip').forEach(btn => {
+                btn.className = "category-chip flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition hover:bg-slate-800/50";
+            });
+
+            const activeChip = Array.from(document.querySelectorAll('.category-chip')).find(b => {
+                const text = b.innerText.trim();
+                if (categoryName === 'All' && text === 'All') return true;
+                if (categoryName.startsWith(text)) return true;
+                return false;
+            });
+            if (activeChip) {
+                activeChip.className = "category-chip active flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 transition hover:bg-sky-500/30";
+            }
+
+            applyFilterAndPreserve();
+        }
+
+        function filterPlaylist() {
+            activeSearchFilter = document.getElementById('library-search').value;
+            applyFilterAndPreserve();
+        }
+
+        function resetToDefaultPlaylist() {
+            playlist = [...PRESET_TRACKS];
+            stagedTracks = [];
+            activeCategoryFilter = 'All';
+            activeSearchFilter = '';
+            document.getElementById('library-search').value = '';
+            
+            filterCategory('All');
+            showToast("Playlist reset to default 50 classic tracks!");
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            
+            if (extension === 'csv') {
+                parseCSVFile(file);
+            } else if (extension === 'xlsx' || extension === 'xls') {
+                parseExcelFile(file);
+            } else {
+                showToast("Unsupported file format.", "error");
+            }
+            
+            event.target.value = '';
+        }
+
+        function parseCSVFile(file) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    processUploadedRows(results.data);
+                },
+                error: function(err) {
+                    showToast("Failed to parse CSV file.", "error");
+                }
+            });
+        }
+
+        function parseExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                try {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    processUploadedRows(jsonData);
+                } catch (error) {
+                    showToast("Failed to read Excel file structure.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processUploadedRows(rows) {
+            if (!rows || rows.length === 0) {
+                showToast("No valid data rows found in file.", "error");
+                return;
+            }
+
+            const cleanTracks = [];
+            rows.forEach(row => {
+                const series = getRowValueByAliases(row, ['Series', 'Category', 'Collection', 'Franchise']) || 'Custom';
+                const trackName = getRowValueByAliases(row, ['Track Name', 'Title', 'Track', 'Name']) || 'Unknown Track';
+                const game = getRowValueByAliases(row, ['Game / Context', 'Game', 'Source', 'Album']) || 'Unknown Source';
+                const vibe = getRowValueByAliases(row, ['Vibe / Style', 'Vibe', 'Style', 'Mood', 'Description', 'Notes']) || '';
+                const url = getRowValueByAliases(row, ['YouTube URL', 'URL', 'Link', 'Youtube Link', 'Video URL']);
+
+                if (url && getYouTubeId(url)) {
+                    cleanTracks.push({
+                        series: series.trim(),
+                        trackName: trackName.trim(),
+                        game: game.trim(),
+                        vibe: vibe.trim(),
+                        url: url.trim()
+                    });
+                }
+            });
+
+            if (cleanTracks.length === 0) {
+                showToast("No track rows matches a valid YouTube URL.", "error");
+                return;
+            }
+
+            stagedTracks = cleanTracks;
+            
+            document.getElementById('dialog-import-count').innerText = cleanTracks.length;
+            document.getElementById('upload-dialog').classList.remove('hidden');
+        }
+
+        function getRowValueByAliases(row, aliases) {
+            const keys = Object.keys(row);
+            for (let alias of aliases) {
+                const matchedKey = keys.find(k => k.toLowerCase().trim() === alias.toLowerCase().trim());
+                if (matchedKey) return row[matchedKey];
+            }
+            return null;
+        }
+
+        function confirmImport(mode) {
+            if (mode === 'append') {
+                playlist = [...playlist, ...stagedTracks];
+                showToast(`Appended ${stagedTracks.length} tracks to your library!`);
+            } else if (mode === 'overwrite') {
+                playlist = [...stagedTracks];
+                showToast(`Replaced playlist with ${stagedTracks.length} custom tracks!`);
+            }
+            
+            closeImportDialog();
+            registerCustomSeriesColors();
+            filterCategory('All');
+        }
+
+        function registerCustomSeriesColors() {
+            playlist.forEach(track => {
+                if (!SERIES_COLORS[track.series]) {
+                    SERIES_COLORS[track.series] = {
+                        color: '#3b82f6', 
+                        glowBg: 'bg-slate-900/45',
+                        tagClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    };
+                }
+            });
+        }
+
+        function closeImportDialog() {
+            document.getElementById('upload-dialog').classList.add('hidden');
+        }
+
+        function downloadTemplate() {
+            const templateCSV = "Series,Track Name,Game / Context,Vibe / Style,YouTube URL\n" +
+                                "Zelda,Hateno Village (Night),Breath of the Wild,Warm acoustic guitar,https://www.youtube.com/watch?v=y2IAdxs_fq4\n" +
+                                "Kingdom Hearts,Dearly Beloved,Kingdom Hearts II,Iconic menu music,https://www.youtube.com/watch?v=4It2Prl5E-Q\n" +
+                                "Custom Study Music,Rainy Lofi Beats,Lofi Girl,Perfect focus background,https://www.youtube.com/watch?v=jfKfPfyJRdk";
+            
+            const blob = new Blob([templateCSV], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "LoreBeat_Playlist_Template.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIconBg = document.getElementById('toast-icon-bg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+
+            if (type === "error") {
+                toastIconBg.className = "p-1 rounded bg-rose-500/10 text-rose-400";
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+            } else if (type === "info") {
+                toastIconBg.className = "p-1 rounded bg-blue-500/10 text-blue-400";
+                toastIcon.setAttribute('data-lucide', 'info');
+            } else {
+                toastIconBg.className = "p-1 rounded bg-emerald-500/10 text-emerald-400";
+                toastIcon.setAttribute('data-lucide', 'check');
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
