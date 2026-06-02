@@ -157,7 +157,7 @@
                         <div class="w-12 h-12 rounded-full border-4 border-slate-700 border-t-sky-500 animate-spin"></div>
                         <p class="text-sm text-slate-400 font-medium">Readying your loop...</p>
                     </div>
-                    <!-- Playback Error Fallback Interface Overlay -->
+                    <!-- Playback Error Fallback Interface Overlay[cite: 2] -->
                     <div id="player-error-fallback" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center gap-4 transition-opacity duration-300 opacity-0 pointer-events-none z-30">
                         <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
                             <i data-lucide="alert-octagon" class="w-6 h-6"></i>
@@ -165,7 +165,7 @@
                         <div>
                             <h4 id="error-fallback-title" class="font-bold text-white text-base">YouTube Embed Blocked</h4>
                             <p id="error-fallback-message" class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
-                                Nintendo/Monolith Soft block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
+                                Publisher blocks official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center justify-center gap-2 mt-2 pointer-events-auto">
@@ -220,7 +220,7 @@
                     </div>
                 </div>
 
-                <!-- Master Audio Player Control HUD -->
+                <!-- Master Audio Player Control HUD[cite: 2] -->
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-6 mt-2 pt-2 border-t border-slate-900">
                     
                     <!-- Auxiliary Modes (Shuffle / Loop Modes) -->
@@ -289,7 +289,7 @@
             </div>
         </section>
 
-        <!-- Right Side: Library & Custom Track Manager (5 Columns) -->
+        <!-- Right Side: Library & Custom Track Manager (5 Columns)[cite: 2] -->
         <section class="lg:col-span-5 flex flex-col gap-6 h-full min-h-[500px] lg:min-h-0">
             
             <!-- Library panel card container -->
@@ -351,7 +351,7 @@
             </div>
         </section>
 
-        <!-- Broken Tracks Manager / Repair Station (Full Width at Bottom) -->
+        <!-- Broken Tracks Manager / Repair Station (Full Width at Bottom)[cite: 2] -->
         <section class="lg:col-span-12 bg-slate-950/40 border border-slate-900 rounded-2xl p-5 backdrop-blur-lg flex flex-col gap-4 mt-2">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-900/60 pb-3">
                 <div class="flex items-center gap-2.5">
@@ -460,7 +460,7 @@
         <p>© 2026 LoreBeat. Music content belongs directly to Nintendo, Monolith Soft, Mobius Digital, and Square Enix.</p>
     </footer>
 
-    <!-- JavaScript logic -->
+    <!-- JavaScript logic[cite: 2] -->
     <script>
         const PRESET_TRACKS = [
             // Zelda
@@ -636,8 +636,8 @@
                 if (shimmer) {
                     shimmer.classList.add('opacity-0');
                 }
-                document.getElementById('player-error-fallback').classList.add('opacity-0');
-                document.getElementById('player-error-fallback').classList.add('pointer-events-none');
+                // Double-safety clearing on active execution[cite: 2]
+                document.getElementById('player-error-fallback').classList.add('opacity-0', 'pointer-events-none');
             } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.CUED) {
                 icon.setAttribute('data-lucide', 'play');
                 lucide.createIcons();
@@ -943,6 +943,13 @@
 
         function loadAndPlay(track) {
             if (!track) return;
+
+            // FIX ISSUE 2: Immediately slide away the error layout mask when loading any new track[cite: 2]
+            const fallbackOverlay = document.getElementById('player-error-fallback');
+            if (fallbackOverlay) {
+                fallbackOverlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+
             setTrackDetailsUI(track);
 
             const videoId = getYouTubeId(track.url);
@@ -1083,7 +1090,7 @@
 
             const loopBtn = document.getElementById('btn-loop');
             if (isLooping) {
-                loopBtn.classList.add('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
+                shufBtn.classList.add('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
             } else {
                 loopBtn.classList.remove('bg-sky-500/10', 'text-sky-400', 'border-sky-500/30');
             }
@@ -1105,10 +1112,31 @@
 
         function getYouTubeId(url) {
             if (!url) return null;
-            // Restored the exact regex parser structure from original webapp spec
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
+            
+            // FIX ISSUE 1: Bulletproof ID Extractor parsing structural edge cases natively[cite: 2]
+            try {
+                let textStr = url.trim();
+                // Handle short link structures (youtu.be/ID)
+                if (textStr.includes('youtu.be/')) {
+                    return textStr.split('youtu.be/')[1].split(/[?#]/)[0];
+                }
+                // Handle standard inline configurations (watch?v=ID)
+                if (textStr.includes('v=')) {
+                    return textStr.split('v=')[1].split('&')[0].split('#')[0];
+                }
+                // Handle deep direct embeds (embed/ID)
+                if (textStr.includes('embed/')) {
+                    return textStr.split('embed/')[1].split(/[?#]/)[0];
+                }
+                
+                // Final regular fallback check
+                const regExp = /^.*(v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = textStr.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : null;
+            } catch (e) {
+                console.error("Error structural parsing for active URL lookup", e);
+                return null;
+            }
         }
 
         function filterCategory(categoryName) {
