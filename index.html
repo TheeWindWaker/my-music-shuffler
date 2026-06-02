@@ -1,77 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoreBeat - Custom Library</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <style>body { font-family: 'Inter', sans-serif; background-color: #0b0f19; }</style>
-</head>
-<body class="text-slate-100 min-h-screen">
-    <!-- Main UI Framework -->
-    <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <h1 class="text-xl font-bold">LoreBeat</h1>
-            <label class="cursor-pointer bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
-                Upload Playlist
-                <input type="file" class="hidden" accept=".csv, .xlsx" onchange="handleFileImport(event)">
-            </label>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto p-6 grid grid-cols-12 gap-6">
-        <section class="col-span-7">
-            <div class="bg-slate-950/50 border border-slate-800 rounded-2xl p-6">
-                <div id="youtube-iframe-placeholder" class="aspect-video bg-slate-900 rounded-xl flex items-center justify-center">
-                    <p class="text-slate-500">Upload a playlist to initialize player</p>
-                </div>
-            </div>
-        </section>
-        <section class="col-span-5">
-            <div id="playlist-list" class="bg-slate-950/50 border border-slate-800 rounded-2xl p-5 min-h-[500px]">
-                <p class="text-slate-500 text-center mt-20">Library Empty</p>
-            </div>
-        </section>
-    </main>
-
-    <script>
-        // START BLANK
-        let playlist = [];
-        let filteredTracks = [];
-        let currentTrackIndex = 0;
-
-        function handleFileImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+// Add this updated logic to your <script> section
+function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            playlist = results.data;
+            filteredTracks = [...playlist];
             
-            // Re-using the parser logic from your previous working version
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    playlist = results.data;
-                    filteredTracks = [...playlist];
-                    renderLibrary();
-                }
-            });
+            // 1. Hide the empty state/placeholder
+            document.getElementById('upload-view')?.classList.add('hidden');
+            
+            // 2. Render the library list
+            renderLibrary();
+            
+            // 3. Initialize the player with the first track immediately
+            if (playlist.length > 0) {
+                // This assumes your loadAndPlay function is defined below
+                loadAndPlay(playlist[0]); 
+            }
+            showToast("Library loaded successfully!");
         }
+    });
+}
 
-        function renderLibrary() {
-            const container = document.getElementById('playlist-list');
-            container.innerHTML = playlist.map((t, i) => `
-                <div class="p-3 border-b border-slate-800 hover:bg-slate-900 cursor-pointer" onclick="loadTrack(${i})">
-                    <h4 class="font-bold text-sm">${t['Track Name'] || 'Untitled'}</h4>
-                    <p class="text-xs text-slate-400">${t['Series'] || 'General'}</p>
-                </div>
-            `).join('');
-        }
-        
-        // Placeholder for your existing loadAndPlay logic
-        function loadTrack(index) { console.log("Loading track:", playlist[index]); }
-    </script>
-</body>
-</html>
+function renderLibrary() {
+    const container = document.getElementById('playlist-list');
+    // Ensure the container exists before injecting HTML
+    if (!container) return;
+    
+    container.innerHTML = playlist.map((t, i) => `
+        <div class="p-3 border-b border-slate-800 hover:bg-slate-900 cursor-pointer transition" onclick="loadAndPlay(playlist[${i}])">
+            <h4 class="font-bold text-sm text-white">${t['Track Name'] || 'Untitled'}</h4>
+            <p class="text-xs text-slate-400">${t['Series'] || 'General'}</p>
+        </div>
+    `).join('');
+}
