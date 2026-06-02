@@ -165,7 +165,7 @@
                         <div>
                             <h4 id="error-fallback-title" class="font-bold text-white text-base">YouTube Embed Blocked</h4>
                             <p id="error-fallback-message" class="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
-                                Nintendo/Square Enix block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
+                                Nintendo/Monolith Soft block official audio tracks on local desktop files (<code class="bg-slate-900 px-1 py-0.5 rounded text-rose-400 font-mono text-[10px]">file://</code>).
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center justify-center gap-2 mt-2 pointer-events-auto">
@@ -457,7 +457,7 @@
 
     <!-- Footer Meta -->
     <footer class="border-t border-slate-900 bg-slate-950/60 py-4 text-center text-xs text-slate-500 mt-auto z-10">
-        <p>© 2026 LoreBeat. Music content belongs directly to Nintendo, Square Enix, Mobius Digital, and Monolith Soft.</p>
+        <p>© 2026 LoreBeat. Music content belongs directly to Nintendo, Monolith Soft, Mobius Digital, and Square Enix.</p>
     </footer>
 
     <!-- JavaScript logic -->
@@ -499,7 +499,7 @@
             {series: "Outer Wilds", trackName: "Postpartum", game: "Radio Signals", vibe: "Ambient, deeply soothing guitar performance", url: "https://www.youtube.com/watch?v=3S5eJ7q184k"},
             {series: "Outer Wilds", trackName: "14.3 Billion Years", game: "Original Soundtrack", vibe: "Slow, atmospheric evolution resolving into a quiet finish", url: "https://www.youtube.com/watch?v=XOrygf_iLhw"},
 
-            // Xenoblade (UPDATED TRACK REPRISALS)
+            // Xenoblade
             {series: "Xenoblade Chronicles", trackName: "Satorl Marsh (Night)", game: "Xenoblade Chronicles 1", vibe: "Ethereal vocal harmonies, soft bassline, gorgeous piano", url: "https://www.youtube.com/watch?v=75YyJ9o4skA"},
             {series: "Xenoblade Chronicles", trackName: "Colony 9 (Night)", game: "Xenoblade Chronicles 1", vibe: "Jazzy, late-night piano variation of the opening town theme", url: "https://www.youtube.com/watch?v=A37f9bX86n8"},
             {series: "Xenoblade Chronicles", trackName: "Fonsa Myma (Night)", game: "Xenoblade Chronicles 2", vibe: "Profoundly stunning, classical piano mimicking falling rain", url: "https://www.youtube.com/watch?v=OshA6_xG_18"},
@@ -1105,6 +1105,7 @@
 
         function getYouTubeId(url) {
             if (!url) return null;
+            // Restored the exact regex parser structure from original webapp spec
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
